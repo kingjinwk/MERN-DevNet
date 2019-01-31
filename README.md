@@ -1,5 +1,9 @@
 # MERN Stack | DevNet
 
+#### These are my notes as I took my first MERN stack experience on Udemy.
+
+
+
 ### Extensions for VSCode
 
 ES7 React/Redux/GraphQL...
@@ -11,6 +15,8 @@ Node.js Modules Intellisense
 Prettier
 
 Bracket Pair Colorizer
+
+
 
 ### Startup | Backend API using 
 
@@ -63,6 +69,8 @@ Bracket Pair Colorizer
      .catch(err => console.log(err));
    ```
 
+
+
 ### Routing Files with Express Router
 
 Separate routes for each of our resources
@@ -103,3 +111,45 @@ Separate routes for each of our resources
    ```
 
 5. `http://localhost:5000/api/<Routes>/test` to see the message on browser
+
+   *SIDE NOTE: `rm -rf .git` to undo git repo*
+
+
+
+### Creating User Model: Authentication, JSON webtokens, Register, Login
+
+1. create `models` directory and then `User.js` (caps is convention)
+
+2. inside `User.js`
+
+   ```javascript
+   const mongoose = require("mongoose"); 	//mongoose dependencies
+   const Schema = mongoose.Schema;			//using Schema to create model
+   
+   //Create Schema
+   const UserSchema = new Schema({
+     //name email password avatar date
+     name: {
+       type: String,
+       required: true
+     },
+     email: {
+       type: String,
+       required: true
+     },
+     password: {
+       type: String,
+       required: true
+     },
+     avatar: {
+       type: String,
+       required: true
+     },
+     date: {
+       type: Date,
+       default: Date.now //current timestamp
+     }
+   });
+   
+   module.exports = User = mongoose.model("users", UserSchema);
+   ```

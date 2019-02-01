@@ -264,4 +264,64 @@ add the login functionality
    ```
 
 
-### Creating the Java Webtoken (JWT) for login
+### Creating the JSON Webtoken (JWT) for login
+
+our current logic only says stuff like message success
+
+1. create JWT by importing dependencies and declaring a payload, and then `jwt.sign` to sign the token
+
+   `users.js` (below)
+
+   ```javascript
+   //add to header
+   const jwt = require("jsonwebtoken");
+   
+   ..
+   ..
+   ..
+   
+   bcrypt.compare(password, user.password).then(isMatch => {
+         if (isMatch) {
+           //if User passed, generate the token
+   
+           //Create JWT payload for next step
+           const payload = { id: user.id, name: user.name, avatar: user.avatar };
+   
+           //Sign the token takes payload (userinfo), secret (key), expiration (in seconds), callback
+           jwt.sign(
+             payload,
+             keys.secretOrKey,
+             { expiresIn: 3600 },
+   
+             (err, token) => {
+               res.json({
+                 success: true,
+                 token: "Bearer " + token
+               });
+             }
+           );
+         } else {
+           return res.status(400).json({ password: "Incorrect Password" });
+         }
+       }
+   ```
+
+2. the key is declared inside the `config` folder's `keys.js`
+
+   ```javascript
+   secretOrKey: "secret"
+   ```
+
+   and then import it into `users.js`
+
+   ```javascript
+   const keys = require("../../config/keys");
+   ```
+
+3. reload to see token generated in **Postman**
+
+
+
+### Implement Passport for JWT Authentication
+
+verifies token we made in previous step

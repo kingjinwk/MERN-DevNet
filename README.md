@@ -325,3 +325,132 @@ our current logic only says stuff like message success
 ### Implement Passport for JWT Authentication
 
 verifies token we made in previous step
+
+1. start by including `passport` in server.js
+
+2. add these lines to initialize passport, and then link it to the new `passport.js` file we will create
+
+   ```javascript
+   //request and response object
+   //app.get("/", (req, res) => res.send("Hello Me"));
+   
+   //Passport middleware
+   app.use(passport.initialize());
+   
+   //Passport Config
+   require('./config/passport')(passport);
+   
+   // Use Routes
+   //app.use("/api/users", users);
+   //app.use("/api/profile", profile);
+   //app.use("/api/posts", posts);
+   ```
+
+3. create `passport.js` in config and write
+
+   ```javascript
+   const JwtStrategy = require("passport-jwt").Strategy;
+   const ExtractJwt = require("passport-jwt").ExtractJwt;
+   //For user info
+   const mongoose = require("mongoose");
+   const User = mongoose.model("users");
+   //This contains our secret to validate request
+   const keys = require("../config/keys");
+   
+   
+   
+   const opts = {};
+   opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+   opts.secretOrKey = keys.secretOrKey;
+   
+   module.exports = passport => {
+     passport.use(
+       new JwtStrategy(opts, (jwt_payload, done) => {
+         console.log(jwt_payload);
+       })
+     );
+   };
+   
+   ```
+
+4. Update `users.js` and add a route
+
+   ```javascript
+   ...
+   //To create protected route for user
+   const passport = require("passport");
+   
+   ...
+   ...
+   ...
+   
+   // @route   GET api/users/current
+   // @desc    Return current user (who holds token)
+   // @access  Private
+   router.get(
+     "/current",
+     passport.authenticate("jwt", { session: false }),
+     (req, res) => {
+       res.json({ msg: "Success" });
+     }
+   );
+   
+   module.exports = router;
+   ```
+
+   
+
+5. Postman now shows that we are not authenticated to access `http://localhost:5000/api/users/currents`
+
+6. To fix this, POST request to **Postman** a login, and copy the JWT token (Bearer) and then go back to update `passport.js`
+
+   ```javascript
+   ...
+   ...
+   
+   ...
+   
+   module.exports = passport => {
+     passport.use(
+       new JwtStrategy(opts, (jwt_payload, done) => {
+         User.findById(jwt_payload.id)
+           .then(user => {
+             if (user) {
+               return done(null, user);
+             }
+             return done(null, false);
+           })
+           .catch(err => console.log(err));
+       })
+     );
+   };
+   ```
+
+   
+
+7. Now, do a GET request on Postman to step 5. and pass in the token as a **Header**
+
+8. Works
+
+9. update `users.js`to only return what we want
+
+   ```javascript
+   // @route   GET api/users/current
+   // @desc    Return current user (who holds token)
+   // @access  Private
+   router.get(
+     "/current",
+     passport.authenticate("jwt", { session: false }),
+     (req, res) => {
+       res.json({
+         id: req.user.id,
+         name: req.user.name,
+         email: req.user.email
+       });
+     }
+   );
+   ```
+
+
+
+### Validation

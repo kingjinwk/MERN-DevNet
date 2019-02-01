@@ -153,3 +153,74 @@ Separate routes for each of our resources
    
    module.exports = User = mongoose.model("users", UserSchema);
    ```
+
+
+### User Registration w/ Postman
+
+1. `users.js` and create a route
+
+   ```javascript
+   // @route   GET api/users/register
+   // @desc    Register user
+   // @access  Public
+   router.post("/register", (req, res) => {
+     //use mongoose to first find if email exists (line 4 Load User Model)
+     User.findOne({ email: req.body.email });
+   });
+   ```
+
+   `req.body.email` requires us to add body-parser to `server.js`
+
+   ```javascript
+   //add these
+   
+   //require module
+   const bodyParser = require('body-parser');
+   
+   //Body parser middleware
+   app.use(bodyParser.urlencoded({extended: false}));
+   app.use(bodyParser.json());
+   ```
+
+2. installed `npm i gravatar` to pull the avatar out the email
+
+   ```javascript
+   const gravatar = require("gravatar");
+   
+   User.findOne({ email: req.body.email }).then(user => {
+       if (user) {
+         return res.status(400).json({ email: "Email already exists" });
+       } else {
+         const avatar = gravatar.url(req.body.email, {
+           s: "200", //size
+           r: "pg", //Rating
+           d: "mm" //default
+         });
+   
+         const newUser = new User({
+           name: req.body.name,
+           email: req.body.email,
+           avatar,
+           password: req.body.password
+         });
+   ```
+
+3. installed `bcryptjs` for password hashing
+
+```javascript
+      
+const bcrypt = require("bcryptjs");
+      
+      bcrpyt.genSalt(10, (err, salt) => {
+        bcrpyt.hash(newUser.password, salt, (err, hash) => {
+          if (err) throw err;
+          newUser.password = hash;
+          newUser
+            .save()
+            .then(user => res.json(user))
+            .catch(err => console.log(err));
+        });
+      });
+    }
+```
+

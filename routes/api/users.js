@@ -33,8 +33,8 @@ router.post("/register", (req, res) => {
         password: req.body.password
       });
 
-      bcrpyt.genSalt(10, (err, salt) => {
-        bcrpyt.hash(newUser.password, salt, (err, hash) => {
+      bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(newUser.password, salt, (err, hash) => {
           if (err) throw err;
           newUser.password = hash;
           newUser
@@ -44,6 +44,34 @@ router.post("/register", (req, res) => {
         });
       });
     }
+  });
+});
+
+// @route   GET api/users/login
+// @desc    Login User / Returning JWT (token)
+// @access  Public
+router.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  //Find the user by email
+  //by using User model
+  User.findOne({ email }).then(user => {
+    //Check for user
+    if (!user) {
+      return res.status(404).json({ email: "User not found" });
+    }
+
+    //If user is good, check password
+    //use bcrypt to compare pw and hashed
+    bcrypt.compare(password, user.password).then(isMatch => {
+      if (isMatch) {
+        //if User passed, generate the token
+        res.json({ msg: "Successful Login" });
+      } else {
+        return res.status(400).json({ password: "Incorrect Password" });
+      }
+    });
   });
 });
 

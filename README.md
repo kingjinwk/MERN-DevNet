@@ -454,3 +454,200 @@ verifies token we made in previous step
 
 
 ### Validation
+
+to make sure that login info throws the correct errors if needed
+
+1. using `validator.js` for a bunch of good stuff
+
+2. in `register.js`
+
+   ```javascript
+   const Validator = require("validator");
+   
+   module.exports = function validateRegisterInput(data) {
+     let errors = {};
+   
+     if(!Validator.isLength(data.name, { min: 2, max: 30 })){
+         errors.name = 'Name must be between 2 and 30 characters';
+     }
+   
+     return {
+         errors,
+         isValid: errors
+     }
+   };
+   ```
+
+3. we need isValid to work, so we make `is-empty.js`
+
+   to check for any empty ANYTHING
+
+   `is-empty.js`
+
+   ```javascript
+   function isEmpty(value) {
+     return (
+       value === undefined ||
+       value === null ||
+       (typeof value === "object" && Object.keys(value).length === 0) ||
+       (typeof value === "string" && value.trim().length === 0)
+     );
+   }
+   module.exports = isEmpty;
+   
+   or
+   
+   const isEmpty = value =>
+     value === undefined ||
+     value === null ||
+     (typeof value === "object" && Object.keys(value).length === 0) ||
+     (typeof value === "string" && value.trim().length === 0);
+   
+   module.exports = isEmpty;
+   
+   ```
+
+4. go to `users.js` and add
+
+   ```javascript
+   // Load Input Validation
+   const validateRegisterInput = require('../../validation/register');
+   
+   and
+   
+   
+   // @route   GET api/users/register
+   // @desc    Register user
+   // @access  Public
+   router.post("/register", (req, res) => {
+     //using destructuring to get the error message from isValid, from register.js
+     const { errors, isValid } = validateRegisterInput(req.body);
+   
+     // Check validation, if not valid, return a 400 error
+     if (!isValid) {
+       return res.status(400).json(errors);
+     }
+   ```
+
+5. Now any invalid username can't be registered on Postman
+
+6. We want to make sure register fields look correct, modify `register.js`
+
+   ```javascript
+   const Validator = require("validator");
+   const isEmpty = require("./is-empty");
+   
+   module.exports = function validateRegisterInput(data) {
+     let errors = {};
+   
+     // gets tested as an empty string
+     data.name = !isEmpty(data.name) ? data.name : "";
+     data.email = !isEmpty(data.email) ? data.email : "";
+     data.password = !isEmpty(data.password) ? data.password : "";
+     // the confirm password
+     data.password2 = !isEmpty(data.password2) ? data.password2 : "";
+   
+     if (!Validator.isLength(data.name, { min: 2, max: 30 })) {
+       errors.name = "Name must be between 2 and 30 characters";
+     }
+   
+     if (Validator.isEmpty(data.name)) {
+       errors.name = "Name field is required";
+     }
+   
+     if (Validator.isEmpty(data.email)) {
+       errors.email = "Email field is required";
+     }
+   
+     if (!Validator.isEmail(data.email)) {
+       errors.email = "Invalid Email";
+     }
+   
+     if (Validator.isEmpty(data.password)) {
+       errors.password = "Password field is required";
+     }
+   
+     if (!Validator.isLength(data.password, { min: 6, max: 30 })) {
+       errors.password = "Password must be at least 6 characters";
+     }
+   
+     if (Validator.isEmpty(data.password2)) {
+       errors.password2 = "Retype your password";
+     }
+   
+     if (!Validator.equals(data.password, data.password2)) {
+       errors.password2 = "Passwords must match";
+     }
+   
+     return {
+       errors,
+       isValid: isEmpty(errors)
+     };
+   };
+   
+   ```
+
+7. fill `login.js` with
+
+   ```javascript
+   const Validator = require("validator");
+   const isEmpty = require("./is-empty");
+   
+   module.exports = function validateLoginInput(data) {
+     let errors = {};
+   
+     // gets tested as an empty string
+     data.email = !isEmpty(data.email) ? data.email : "";
+     data.password = !isEmpty(data.password) ? data.password : "";
+   
+     if (!Validator.isEmail(data.email)) {
+       errors.email = "Invalid Email";
+     }
+   
+     if (Validator.isEmpty(data.password)) {
+       errors.password = "Password field is required";
+     }
+   
+      //the order of checking matters
+     if (Validator.isEmpty(data.email)) {
+       errors.email = "Email field is required";
+     }
+     return {
+       errors,
+       isValid: isEmpty(errors)
+     };
+   };
+   ```
+
+   exclude the options we don't need, and then add this file to `users.js`
+
+   ```javascript
+   const express = require("express");
+   const router = express.Router();
+   const gravatar = require("gravatar");
+   const bcrypt = require("bcryptjs");
+   const jwt = require("jsonwebtoken");
+   const keys = require("../../config/keys");
+   //To create protected route for user
+   const passport = require("passport");
+   
+   // Load Input Validation
+   const validateRegisterInput = require("../../validation/register");
+   const validateLoginInput = require("../../validation/login");
+   
+   // Load User Model
+   const User = require("../../models/User");
+   
+   // @route   GET api/users/test
+   // @desc    Tests users route
+   // @access  Public
+   router.get("/test", (req, res) => res.json({ msg: "Users Works Fine" }));
+   
+   ...
+   ...
+   ...
+   ```
+
+
+
+### Profile API Routes

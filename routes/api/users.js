@@ -7,6 +7,10 @@ const keys = require("../../config/keys");
 //To create protected route for user
 const passport = require("passport");
 
+// Load Input Validation
+const validateRegisterInput = require("../../validation/register");
+const validateLoginInput = require("../../validation/login");
+
 // Load User Model
 const User = require("../../models/User");
 
@@ -19,6 +23,14 @@ router.get("/test", (req, res) => res.json({ msg: "Users Works Fine" }));
 // @desc    Register user
 // @access  Public
 router.post("/register", (req, res) => {
+  //using destructuring to get the error message from isValid, from register.js
+  const { errors, isValid } = validateRegisterInput(req.body);
+
+  // Check validation, if not valid, return a 400 error
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
   //use mongoose to first find if email exists (line 4 Load User Model)
   User.findOne({ email: req.body.email }).then(user => {
     if (user) {
@@ -55,6 +67,13 @@ router.post("/register", (req, res) => {
 // @desc    Login User / Returning JWT (token)
 // @access  Public
 router.post("/login", (req, res) => {
+  //using destructuring to get the error message from isValid, from register.js
+  const { errors, isValid } = validateLoginInput(req.body);
+
+  // Check validation, if not valid, return a 400 error
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
   const email = req.body.email;
   const password = req.body.password;
 

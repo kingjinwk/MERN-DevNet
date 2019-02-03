@@ -8,16 +8,74 @@ const Profile = require("../../models/Profile");
 //Load User Models
 const User = require("../../models/User");
 
+// Mongoose useFindAndModify is deprecated
+mongoose.set("useFindAndModify", false);
+
 //Load Validation
 const validateProfileInput = require("../../validation/profile");
-
-//For outdated stuff
-mongoose.set("useFindAndModify", false);
 
 // @route   GET api/profile/test
 // @desc    Tests profile route
 // @access  Public
 router.get("/test", (req, res) => res.json({ msg: "Profile Works Fine" }));
+
+// @route   GET api/profile/all
+// @desc    Get all profiles in array
+// @access  Public
+router.get("/all", (req, res) => {
+  Profile.find()
+    .populate("user", ["name", "avatar"])
+    .then(profiles => {
+      if (!profiles) {
+        errors.noprofile = "There are no profiles";
+        return res.status(404).json(errors);
+      }
+      res.json(profiles);
+    })
+    .catch(err => res.status(404).json({ profile: "There are no profiles" }));
+});
+
+// @route   GET api/profile/handle/:handle
+// @desc    Get profile by handle
+// @access  Public
+router.get("/handle/:handle", (req, res) => {
+  const errors = {};
+
+  //grabs handle from the URL
+  Profile.findOne({ handle: req.params.handle })
+    .populate("user", ["name", "avatar"])
+    .then(profile => {
+      //check to see if there is no profile
+      if (!profile) {
+        errors.noprofile = "There is no profile for this user";
+        res.status(404).json(errors);
+      }
+      //if there is profile found
+      res.json(profile);
+    })
+    .catch(err => res.status(404).json(errors));
+});
+
+// @route   GET api/profile/user/:user_id
+// @desc    Get profile by user id
+// @access  Public
+router.get("/user/:user_id", (req, res) => {
+  const errors = {};
+
+  //grabs handle from the URL
+  Profile.findOne({ user: req.params.user_id })
+    .populate("user", ["name", "avatar"])
+    .then(profile => {
+      //check to see if there is no profile
+      if (!profile) {
+        errors.noprofile = "There is no profile for this user";
+        res.status(404).json(errors);
+      }
+      //if there is profile found
+      res.json(profile);
+    })
+    .catch(err => res.status(404).json(errors));
+});
 
 // @route   GET api/profile
 // @desc    Get current user profile

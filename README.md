@@ -1031,3 +1031,61 @@ make a post route to create a profile
    ```
 
 6. now we can POST req on Postman `api/profile` with key and we see our gravatar on our profile
+
+
+
+### More Profile Routes
+
+getting profile by handle, by id, and to fetch all profiles
+
+1. `api/profile.js` make a new get request before `api/profile` GET request, this one to grab profile by handle
+
+   ```javascript
+   // @route   GET api/profile/handle/:handle
+   // @desc    Get profile by handle
+   // @access  Public
+   router.get("/handle/:handle", (req, res) => {
+     const errors = {};
+   
+     //grabs handle from the URL
+     Profile.findOne({ handle: req.params.handle })
+       .populate("user", ["name", "avatar"])
+       .then(profile => {
+         //check to see if there is no profile
+         if (!profile) {
+           errors.noprofile = "There is no profile for this user";
+           res.status(404).json(errors);
+         }
+         //if there is profile found
+         res.json(profile);
+       })
+       .catch(err => res.status(404).json(errors));
+   });
+   ```
+
+2. make another one, except this one to fetch profile by ID
+
+   ```javascript
+   // @route   GET api/profile/user/:user_id
+   // @desc    Get profile by user id
+   // @access  Public
+   router.get("/user/:user_id", (req, res) => {
+       const errors = {};
+     
+       //grabs handle from the URL
+       Profile.findOne({ user: req.params.user_id })
+         .populate("user", ["name", "avatar"])
+         .then(profile => {
+           //check to see if there is no profile
+           if (!profile) {
+             errors.noprofile = "There is no profile for this user";
+             res.status(404).json(errors);
+           }
+           //if there is profile found
+           res.json(profile);
+         })
+         .catch(err => res.status(404).json(errors));
+     });
+   ```
+
+3. 

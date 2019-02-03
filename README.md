@@ -651,3 +651,383 @@ to make sure that login info throws the correct errors if needed
 
 
 ### Profile API Routes
+
+Creating the models for our profiles with mongoose and schema
+
+1. new `Profile.js` file inside `models`
+
+   ```javascript
+   const mongoose = require("mongoose");
+   const Schema = mongoose.Schema;
+   
+   // Create Schema
+   const ProfileSchema = new Schema({
+     user: {
+       type: Schema.Types.ObjectId,
+       ref: "users"
+     },
+     handle: {
+       type: String,
+       required: true,
+       max: 40
+     },
+     comapny: {
+       type: String,
+       required: false
+     },
+     website: {
+       type: String,
+       required: false
+     },
+     location: {
+       type: String
+     },
+     status: {
+       type: String,
+       required: true
+     },
+     skills: {
+       //array of strings declaration
+       type: [String],
+       required: true
+     },
+     bio: {
+       type: String,
+       required: false
+     },
+     githubusername: {
+       type: String
+     },
+     experience: [
+       {
+         title: {
+           type: String,
+           required: true
+         },
+         company: {
+           type: String,
+           required: true
+         },
+         location: {
+           type: String
+         },
+         from: {
+           type: Date,
+           required: true
+         },
+         to: {
+           type: Date
+         },
+         current: {
+           type: Boolean,
+           default: false
+         },
+         description: {
+           type: String
+         }
+       }
+     ],
+     education: [
+       {
+         school: {
+           type: String,
+           required: true
+         },
+         degree: {
+           type: String,
+           required: true
+         },
+         fieldofstudy: {
+           type: String,
+           required: true
+         },
+         from: {
+           type: Date,
+           required: true
+         },
+         to: {
+           type: Date
+         },
+         current: {
+           type: Boolean,
+           default: false
+         },
+         description: {
+           type: String
+         }
+       }
+     ],
+     social: {
+       youtube: {
+         type: String
+       },
+       twitter: {
+         type: String
+       },
+       facebook: {
+         type: String
+       },
+       linkedin: {
+         type: String
+       },
+       instagram: {
+         type: String
+       }
+     },
+     date: {
+       type: Date,
+       default: Date.now
+     }
+   });
+   
+   //export this as a Mongoose model, add the Profile Schema
+   module.exports = Profile = mongoose.model("profile", ProfileSchema);
+   ```
+
+
+
+### Route the Profile Models
+
+1. go to `profile.js` route current user profile
+2. bring in mongoose, passport, profile models, and user models
+
+```javascript
+//Bringing these in to route the Profile models
+const mongoose = require("mongoose");
+const passport = require("passport");
+//Load profile Models
+const Profile = requre('../../models/Profile');
+//Load User Models
+const User = require('../../models/User');
+```
+
+3. make get request to get current user profile
+
+   ```javascript
+   // @route   GET api/profile
+   // @desc    Get current user profile
+   // @access  Private
+   router.get(
+     "/",
+     passport.authenticate("jwt", { session: false }),
+     (req, res) => {
+       //We want errors to be stored into objects, before we pass the into .json
+       const errors = {};
+   
+       Profile.findOne({ user: req.user.id })
+         .then(profile => {
+           if (!profile) {
+             //Create the error
+             errors.noprofile = "There is no profile for this user";
+             //Pass it into Json
+             return res.status(404).json(errors);
+           }
+           res.json(profile);
+         })
+         .catch(err => res.status(404).json(err));
+     }
+   );
+   ```
+
+4. Postman -> login -> post -> login with user -> get token -> `http://localhost:5000/api/profile` and see that profiles work
+
+
+
+### Create & Update Profile Routes
+
+make a post route to create a profile
+
+1. in `profile.js`
+
+   ```javascript
+   // @route   POST api/profile
+   // @desc    Create / Edit user profile
+   // @access  Private
+   router.post(
+     "/",
+     passport.authenticate("jwt", { session: false }),
+     (req, res) => {
+       // Get fields
+       const profileFields = {};
+       profileFields.user = req.user.id;
+   
+       //check to see if the field we are looking for has been sent it, and then set it as profileFields
+       if (req.body.handle) profileFields.handle = req.body.handle;
+       if (req.body.company) profileFields.company = req.body.company;
+       if (req.body.website) profileFields.website = req.body.website;
+       if (req.body.location) profileFields.location = req.body.location;
+       if (req.body.bio) profileFields.bio = req.body.bio;
+       if (req.body.status) profileFields.status = req.body.status;
+       if (req.body.githubusername)
+         profileFields.githubusername = req.body.githubusername;
+   
+       //Skills - split into array (it comes in as csv)
+       if (typeof req.body.skills !== "undefined") {
+         profileFields.skills = req.body.skills.split(",");
+       }
+   
+       //Social - also an array of objects
+       profileFields.social = {};
+       if (req.body.youtube) profileFields.social.youtube = req.body.youtube;
+       if (req.body.twitter) profileFields.social.twitter = req.body.twitter;
+       if (req.body.facebook) profileFields.social.facebook = req.body.facebook;
+       if (req.body.linkedin) profileFields.social.linkedin = req.body.linkedin;
+       if (req.body.instagram) profileFields.social.instagram = req.body.instagram;
+   
+       //Look for the user before updating stuff
+       Profile.findOne({ user: req.user.id }).then(profile => {
+         if (profile) {
+           //Update the profile, since one exists
+           Profile.findOneAndUpdate(
+             //who to update
+             { user: req.user.id },
+             //the other fields we have req.body'ed for before
+             { $set: profileFields },
+             { new: true }
+           )
+             //respond WITH that profile
+             .then(profile => res.json(profile));
+         } else {
+           //Create a user since one does not exist
+   
+           //Check to see if handle exists
+           Profile.findOne({ handle: profileFiends.handle }).then(profile => {
+             if (profile) {
+               errors.handle = "That handle already exists";
+               //error
+               res.status(400).json(errors);
+             }
+             //other wise
+             //Save Profile
+             new Profile(profileFields).save().then(profile => res.json(profile));
+           });
+         }
+       });
+     }
+   );
+   ```
+
+
+
+### Profile Field Validations
+
+1. create a new `profile.js` inside `validation`directory and 
+
+   ```javascript
+   const Validator = require("validator");
+   const isEmpty = require("./is-empty");
+   
+   module.exports = function validateLoginInput(data) {
+     let errors = {};
+   
+     // gets tested as an empty string
+     data.handle = !isEmpty(data.handle) ? data.handle : "";
+     data.status = !isEmpty(data.status) ? data.status : "";
+     data.skills = !isEmpty(data.skills) ? data.skills : "";
+   
+     if (!Validator.isLength(data.handle, { min: 2, max: 40 })) {
+       errors.handle = "Handle needs to be at least 2 characters";
+     }
+     if (Validator.isEmpty(data.handle)) {
+       errors.handle = "Profile handle is required";
+     }
+     if (Validator.isEmpty(data.status)) {
+       errors.status = "Status field is required";
+     }
+     if (Validator.isEmpty(data.skills)) {
+       errors.skills = "Skills field is required";
+     }
+   
+     if (!isEmpty(data.website)) {
+       if (!Validator.isURL(data.website)) {
+         errors.website = "Not a valid URL";
+       }
+     }
+     if (!isEmpty(data.youtube)) {
+       if (!Validator.isURL(data.youtube)) {
+         errors.youtube = "Not a valid URL";
+       }
+     }
+     if (!isEmpty(data.twitter)) {
+       if (!Validator.isURL(data.twitter)) {
+         errors.twitter = "Not a valid URL";
+       }
+     }
+     if (!isEmpty(data.facebook)) {
+       if (!Validator.isURL(data.facebook)) {
+         errors.facebook = "Not a valid URL";
+       }
+     }
+     if (!isEmpty(data.linkedin)) {
+       if (!Validator.isURL(data.linkedin)) {
+         errors.linkedin = "Not a valid URL";
+       }
+     }
+     if (!isEmpty(data.instagram)) {
+       if (!Validator.isURL(data.instagram)) {
+         errors.instagram = "Not a valid URL";
+       }
+     }
+   
+     return {
+       errors,
+       isValid: isEmpty(errors)
+     };
+   };
+   ```
+
+2. go to `/api/profile.js` and add the validateProfileInput line
+
+   ```javascript
+   // @route   POST api/profile
+   // @desc    Create / Edit user profile
+   // @access  Private
+   router.post(
+     "/",
+     passport.authenticate("jwt", { session: false }),
+     (req, res) => {
+       const { errors, isValid } = validateProfileInput(req.body);
+   
+       //Check Validation
+       if (!isValid) {
+         //Return any error with 400 status
+         return res.status(400).json(errors);
+       }
+   ```
+
+3. add dependency on header
+
+   ```javascript
+   //Load Validation
+   const validateProfileInput = require("../../validation/profile");
+   ```
+
+4. On postman  POST `http://localhost:5000/api/profile`
+
+   - login with the authentication key
+   - I can now add fields onto my profile
+   - handle, status, skills, company, website, facebook, linked etc..
+
+5. go back to `api/profile.js` and add this line to bring the name and avatar to the front
+
+   ```javascript
+   
+   // @route   GET api/profile
+   // @desc    Get current user profile
+   // @access  Private
+   router.get(
+     "/",
+     passport.authenticate("jwt", { session: false }),
+     (req, res) => {
+       //We want errors to be stored into objects, before we pass the into .json
+       const errors = {};
+   
+       Profile.findOne({ user: req.user.id })
+   
+         //Used to bring avatar to profile
+         .populate("user", ["name", "avatar"])
+   
+         .then(profile => {
+   ```
+
+6. now we can POST req on Postman `api/profile` with key and we see our gravatar on our profile

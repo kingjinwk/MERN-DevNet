@@ -1799,4 +1799,116 @@ get, delete, like, unlike, add, comment, and remove comments
 
 ## FRONT END SECTION (FINALLY)
 
-1.
+We are using a bootstrap framework to link the backend API to the frontend
+
+
+
+### Implementing React - with concurrently
+
+1. inside the `DEVNET` folder `create-react-app client` to make the app inside client folder
+
+2. all the client stuff is REACT
+
+3. open `package.json` and add a proxy value: so that the `axios` request to the backend 
+
+4. we will use **<u>concurrently</u>** `npm i concurrently`, and then add a client to the scripts to the DevNet `package.json` `"npm install --prefix client"`
+
+   ```javascript
+     "scripts": {
+       "client-install": "npm install --prefix client",
+       "start": "node server.js",
+       "server": "nodemon server.js",
+       "client": "npm start --prefix client",
+       //this one runs both the server and the client
+       "dev": "concurrently \"npm run server\" \"npm run client\""
+     },
+   ```
+
+5. from now on, `npm run dev` is the command we use to run both
+
+6. Do some cleanup
+
+   1. delete `logo.svg`
+
+   2. change `App.js`to
+
+      ```react
+      import React, { Component } from 'react';
+      import './App.css';
+      
+      class App extends Component {
+        render() {
+          return (
+            <div className="App">
+              <h1> HEy </h1>
+            </div>
+          );
+        }
+      }
+      ```
+
+   3. get rid of everything in `App.css` and replace it with `style.css` from `/devnet_theme/css`
+
+   4. change `  background: url('./img/showcase.jpg') no-repeat;` and add a new `img` directory, and then add the `showcase.jpg` from `devnet_theme`
+
+7. `public/index.html` and install bootstrap
+
+   ```html
+   <!DOCTYPE html>
+   <html lang="en">
+     <head>
+       <meta charset="utf-8" />
+       <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico" />
+       <!-- Added bootstrap -->
+       <link
+         rel="stylesheet"
+         href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+         integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
+         crossorigin="anonymous"
+       />
+       <link
+         rel="stylesheet"
+         href="https://use.fontawesome.com/releases/v5.7.1/css/all.css"
+         integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+         crossorigin="anonymous"
+       />
+       <meta
+         name="viewport"
+         content="width=device-width, initial-scale=1, shrink-to-fit=no"
+       />
+       <meta name="theme-color" content="#000000" />
+   
+       <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+   
+       <title>React App</title>
+     </head>
+     <body>
+       <noscript>You need to enable JavaScript to run this app.</noscript>
+       <!--- JS dependencies for BootStrap -->
+       <div id="root"></div>
+       <script
+         src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+         crossorigin="anonymous"
+       ></script>
+       <script
+         src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"
+         integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut"
+         crossorigin="anonymous"
+       ></script>
+       <script
+         src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"
+         integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+         crossorigin="anonymous"
+       ></script>
+     </body>
+   </html>
+   ```
+
+   
+
+8. install **React Dev Tools** and **Redux Dev Tools** for Google Chrome
+
+9. install fontawesome in `index.html`
+
+   `<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">`, changes shown above

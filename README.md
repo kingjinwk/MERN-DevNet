@@ -1404,7 +1404,399 @@ get, delete, like, unlike, add, comment, and remove comments
 1. create a post model in models `post.js` 
 
    ```javascript
+   const mongoose = require("mongoose");
+   const Schema = mongoose.Schema;
+   
+   //Create Schema
+   const PostSchema = new Schema({
+     //fields for post
+     user: {
+       type: Schema.Types.ObjectId,
+       ref: "users"
+     },
+     text: {
+       type: String,
+       required: true
+     },
+     //Want each post to have their name and avatar, these come FROM user object
+     name: {
+       type: String
+     },
+     avatar: {
+       type: String
+     },
+     likes: [
+       //link each like to the user that made the like
+       //when they hit like,user.id will be passed in
+       {
+         user: {
+           type: Schema.Types.ObjectId,
+           ref: "users"
+         }
+       }
+     ],
+     comments: [
+       {
+         user: {
+           type: Schema.Types.ObjectId,
+           ref: "users"
+         },
+         text: {
+           type: String,
+           required: true
+         },
+         name: {
+           type: String
+         },
+         avatar: {
+           type: String
+         },
+         date: {
+           type: Date,
+           default: Date.now
+         }
+       }
+     ],
+     //date for the post
+     date: {
+       type: Date,
+       default: Date.now
+     }
+   });
+   
+   module.exports = Post = mongoose.model("post", PostSchema);
    
    ```
 
+2. update `posts.js`
+
+   ```javascript
+   const express = require("express");
+   const router = express.Router();
+   //bring in mongoose for database
+   const mongoose = require("mongoose");
+   //passport to protect the routes
+   const passport = require("passport");
+   //bring in post model
+   const Post = require("../../models/Post");
    
+   // @route   GET api/posts/test
+   // @desc    Tests post route
+   // @access  Public
+   router.get("/test", (req, res) => res.json({ msg: "Posts Works Fine" }));
+   
+   // @route   POST api/posts
+   // @desc    Create post
+   // @access  Private
+   router.post(
+     "/",
+     passport.authenticate("jwt", { session: false }),
+     (req, res) => {
+       const newPost = new Post({
+         text: req.body.text,
+         name: req.body.name,
+         avatar: req.body.name,
+         user: req.user.id
+       });
+   
+       newPost.save().then(post => res.json(post));
+     }
+   );
+   
+   module.exports = router;
+   
+   ```
+
+3. Create validation `validation/post.js`
+
+   ```javascript
+   const Validator = require("validator");
+   const isEmpty = require("./is-empty");
+   
+   module.exports = function validatePostInput(data) {
+     let errors = {};
+   
+     // gets tested as an empty string
+     data.text = !isEmpty(data.text) ? data.text : "";
+   
+     if (!Validator.isLength(data.text, { min: 2, max: 300 })) {
+       errors.text = "Post must be between 2 and 300 characters";
+     }
+   
+     if (Validator.isEmpty(data.text)) {
+       errors.text = "Text field is required";
+     }
+   
+     return {
+       errors,
+       isValid: isEmpty(errors)
+     };
+   };
+   
+   ```
+
+   and include it in `api/posts.js`
+
+   `const validatePostInput = require("../../validation/post");`
+
+
+
+### Post Create Route Setup
+
+1. create route in `posts.js` to get all posts
+
+2. ```javascript
+   // @route   GET api/posts
+   // @desc    Get posts
+   // @access  Public
+   router.get("/", (req, res) => {
+     Post.find()
+       .sort({ date: -1 })
+       .then(posts => res.json(posts))
+       .catch(err => res.status(404).json({ nopostsfound: "No posts found" }));
+   });
+   ```
+
+2. create route to get one post
+
+   ```javascript
+   // @route   GET api/posts/:id
+   // @desc    Get posts by id
+   // @access  Public
+   router.get("/:id", (req, res) => {
+     //find by id
+     Post.findById(req.params.id)
+       .then(posts => res.json(posts))
+       .catch(err =>
+         res.status(404).json({ nopostfound: "No post found with this id" })
+       );
+   });
+   ```
+
+#### Delete Posts
+
+1. add a DELETE route to `posts.js`
+
+   ```javascript
+   // @route   DELETE api/posts/:id
+   // @desc    Delete posts by id
+   // @access  Private
+   router.delete(
+     "/:id",
+     passport.authenticate("jwt", { session: false }),
+     (req, res) => {
+       //make sure owner of post is doing the deleting, add profile model
+       Profile.findOne({ user: req.user.id })
+         //with this profile,
+         .then(profile => {
+           Post.findById(req.params.id)
+             .then(post => {
+               // Check for post owner: post.user is not a string, so convert it
+               if (post.user.toString != req.user.id) {
+                 return res
+                   .status(401)
+                   .json({ notauthorized: "User not authorized" });
+               }
+   
+               //Delete post
+               post.remove().then(() => res.json({ success: true }));
+             })
+             .catch(err =>
+               res.status(404).json({ postnotfound: "No post found with this id" })
+             );
+         });
+     }
+   );
+   ```
+
+   make sure to add Profile model to header
+
+   ```javascript
+   //Add Profile model
+   const Profile = require("../../models/Profile");
+   ```
+
+
+
+### Post Like & Unlike Routes Setup
+
+1. in `posts.js` make a new post request
+
+   ```javascript
+   // @route   POST api/posts/like/:id
+   // @desc    Like Post
+   // @access  Private
+   router.post(
+     '/like/:id',
+     passport.authenticate('jwt', { session: false }),
+     (req, res) => {
+       Post.findById(req.params.id)
+         .then(post => {
+           if (
+             post.likes.filter(like => like.user.toString() === req.user.id)
+               .length > 0
+           ) {
+             return res
+               .status(400)
+               .json({ alreadyliked: 'User already liked this post' });
+           }
+   
+           post.likes.unshift({ user: req.user.id });
+           post.save().then(post => res.json(post));
+         })
+         .catch(err => res.status(404).json({ postnotfound: 'No post to like' }));
+     }
+   );
+   ```
+
+   this section was some trouble; Postman would not pull up a post by id, although the user verification part was working. I had to rewrite it, take out the profile verification, and edit a line in `server.js` for mongoose to use the updated URL parser `  .connect(db, { useNewUrlParser: true })`.
+
+2. For unlikes, same thing, except we splice the like out of the array of likes
+
+   ```javascript
+   // @route   POST api/posts/unlike/:id
+   // @desc    Unike Post
+   // @access  Private
+   router.post(
+     '/unlike/:id',
+     passport.authenticate('jwt', { session: false }),
+     (req, res) => {
+       Post.findById(req.params.id)
+         .then(post => {
+           if (
+             (post.likes.filter(
+               like => like.user.toString() === req.user.id
+             ).length = 0)
+           ) {
+             return res
+               .status(400)
+               .json({ alreadyliked: 'User did not like this post' });
+           }
+           //Get the remove index
+           const removeIndex = post.likes
+             .map(item => item.user.toString())
+             .indexOf(req.user.id);
+   
+           //Splice out of the array
+           post.likes.splice(removeIndex, 1);
+   
+           //Save
+           post.save().then(post => res.json(post));
+         })
+         .catch(err => res.status(404).json({ postnotfound: 'No post to like' }));
+     }
+   );
+   ```
+
+
+
+### Adding / Removing Comments model and routes
+
+1. add a new route 
+
+   ```javascript
+   // @route   POST api/posts/comment/:id
+   // @desc    Add a comment to Post
+   // @access  Private
+   router.post(
+     '/comment/:id',
+     passport.authenticate('jwt', { session: false }),
+     (req, res) => {
+       Post.findById(req.params.id)
+         .then(post => {
+           const newComment = {
+             text: req.body.text,
+             name: req.body.name,
+             avatar: req.body.avatar,
+             user: req.user.id
+           };
+   
+           //Push this onto the comments array
+           post.comments.unshift(newComment);
+   
+           //Save
+           post.save().then(post => res.json(post));
+         })
+         .catch(err => res.status(404).json({ postnotfound: 'No post found' }));
+     }
+   );
+   ```
+
+   
+
+2. validate by using `validation/post` because you you can't have a comment without a post anyways
+
+   ```javascript
+   // @route   POST api/posts/comment/:id
+   // @desc    Add a comment to Post
+   // @access  Private
+   router.post(
+     '/comment/:id',
+     passport.authenticate('jwt', { session: false }),
+     (req, res) => {
+       const { errors, isValid } = validatePostInput(req.body);
+   
+       //Check validation
+       if (!isValid) {
+         // If any errors, send 400 w/ errors object
+         return res.status(400).json(errors);
+       }
+       Post.findById(req.params.id)
+         .then(post => {
+           const newComment = {
+             text: req.body.text,
+             name: req.body.name,
+             avatar: req.body.avatar,
+             user: req.user.id
+           };
+   
+           //Push this onto the comments array
+           post.comments.unshift(newComment);
+   
+           //Save
+           post.save().then(post => res.json(post));
+         })
+         .catch(err => res.status(404).json({ postnotfound: 'No post found' }));
+     }
+   );
+   ```
+
+3. For deleting comments, copy the previous and make a **DELETE** request
+
+   ```javascript
+   // @route   DELETE api/posts/comment/:id/:comment_id
+   // @desc    Remove comment from post
+   // @access  Private
+   router.delete(
+     '/comment/:id/:comment_id',
+     passport.authenticate('jwt', { session: false }),
+     (req, res) => {
+       Post.findById(req.params.id)
+         .then(post => {
+           if (
+             post.comments.filter(
+               comment => comment._id.toString() === req.params.comment_id
+             ).length === 0
+           ) {
+             res.status(404).json({ commentnoexist: ' Comment does not exist' });
+           }
+   
+           const removeIndex = post.comments
+             .map(item => item._id.toString())
+             .indexOf(req.params.comment_id);
+   
+           post.comments.splice(removeIndex, 1);
+           post.save().then(post => res.json(post));
+         })
+         .catch(err => res.status(404).json({ postnotfound: 'No post found' }));
+     }
+   );
+   ```
+
+
+
+
+
+## FRONT END SECTION (FINALLY)
+
+1.

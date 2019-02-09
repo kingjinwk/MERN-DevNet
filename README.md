@@ -1912,3 +1912,386 @@ We are using a bootstrap framework to link the backend API to the frontend
 9. install fontawesome in `index.html`
 
    `<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">`, changes shown above
+
+
+
+### Basic Layout Setup - Navbar and footer
+
+1. <u>`rfc` tab for functional components / display(dumb components)</u>
+
+2. <u>`rcc` tab for class component</u>
+
+3. open up `landing.html` and grab the navbar code
+
+   ```react
+   <!-- Navbar -->
+     <nav class="navbar navbar-expand-sm navbar-dark bg-dark mb-4">
+       <div class="container">
+         <a class="navbar-brand" href="landing.html">DevConnector</a>
+         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mobile-nav">
+           <span class="navbar-toggler-icon"></span>
+         </button>
+   
+         <div class="collapse navbar-collapse" id="mobile-nav">
+           <ul class="navbar-nav mr-auto">
+             <li class="nav-item">
+               <a class="nav-link" href="profiles.html"> Developers
+               </a>
+             </li>
+           </ul>
+   
+           <ul class="navbar-nav ml-auto">
+             <li class="nav-item">
+               <a class="nav-link" href="register.html">Sign Up</a>
+             </li>
+             <li class="nav-item">
+               <a class="nav-link" href="login.html">Login</a>
+             </li>
+           </ul>
+         </div>
+       </div>
+     </nav>
+   ```
+
+4. import this new Navbar.js into App.js and add the Navbar in the header
+
+   ```react
+   import React, { Component } from 'react';
+   
+   import Navbar from './components/layout/Navbar';
+   
+   import './App.css';
+   
+   class App extends Component {
+     render() {
+       return (
+         <div className="App">
+           <Navbar />
+           <h1> React Setup Complete </h1>
+         </div>
+       );
+     }
+   }
+   
+   export default App;
+   ```
+
+5. in `Footer.js` 
+
+   1. `rfc` tab to create new functional component
+
+   2. **This step uses Emmet and is very helpful**
+
+      `footer.bg-dark.text-white.mt-5.p-4.text-center` (mt for margin top, p for padding) and hit **tab**
+
+      `<footer className="bg-dark text-white mt-5 p-4 text-center"></footer>`
+
+   3. ```javascript
+      import React from 'react'
+      
+      export default function Footer() {
+        return (
+          <footer className="bg-dark text-white mt-5 p-4 text-center">
+              Copyright &copy; {new Date().getFullYear()} DevNet
+          </footer>
+        )
+      
+      ```
+
+6. bring in footer to `App.js`
+
+    `import Footer from './components/layout/Footer';`
+
+7. `rcc` tab inside `Landing.js`
+
+   ```javascript
+   import React, { Component } from 'react';
+   
+   class Landing extends Component {
+     render() {
+       return (
+         // Landing
+         <div class="landing">
+           <div class="dark-overlay landing-inner text-light">
+             <div class="container">
+               <div class="row">
+                 <div class="col-md-12 text-center">
+                   <h1 class="display-3 mb-4">Developer Network</h1>
+                   <p class="lead">
+                     {' '}
+                     Create a developer profile/portfolio, share posts and get help
+                     from other developers
+                   </p>
+                   <hr />
+                   <a href="register.html" class="btn btn-lg btn-info mr-2">
+                     Sign Up
+                   </a>
+                   <a href="login.html" class="btn btn-lg btn-light">
+                     Login
+                   </a>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   export default Landing;
+   ```
+
+8. Update `App.js` to import Landing and to implement it
+
+   ```react
+   import React, { Component } from 'react';
+   
+   import Navbar from './components/layout/Navbar';
+   import Footer from './components/layout/Footer';
+   import Landing from './components/layout/Landing';
+   
+   import './App.css';
+   
+   class App extends Component {
+     render() {
+       return (
+         <div className="App">
+           <Navbar />
+           <Landing />
+           <Footer />
+         </div>
+       );
+     }
+   }
+   
+   export default App;
+   
+   ```
+
+
+
+### React Router & Component State Setup
+
+**IMPORTANT:** Install the router inside the `client` folder and NOT the main DevNet folder
+
+1. now run `npm i react-router-dom`
+
+2. Now in `App.js`, bring in the BrowserRouter from react-router-dom and make some edits
+
+   ```react
+   import React, { Component } from 'react';
+   import { BrowserRouter as Router, Route } from 'react-router-dom';
+   
+   import Navbar from './components/layout/Navbar';
+   import Footer from './components/layout/Footer';
+   import Landing from './components/layout/Landing';
+   
+   import './App.css';
+   
+   class App extends Component {
+     render() {
+       return (
+         <Router>
+           <div className="App">
+             <Navbar />
+             {/* need exact path to make sure route doesn't display all paths */}
+             <Route exact path="/" component={Landing} />
+             <Footer />
+           </div>
+         </Router>
+       );
+     }
+   }
+   
+   export default App;
+   
+   ```
+
+   
+
+#### Setting Up the registration component / sending JWT 
+
+1. create 'components/auth' as new directoy and create `Login.js and Register.js`, and occupy them with the following code
+
+   `Login.js`
+
+   ```react
+   import React, { Component } from 'react';
+   
+   class Login extends Component {
+     render() {
+       return (
+         <div>
+           <h1> Login </h1>
+         </div>
+       );
+     }
+   }
+   export default Login;
+   
+   ```
+
+   `Register.js`
+
+   ```react
+   import React, { Component } from 'react';
+   
+   class Register extends Component {
+     render() {
+       return (
+         <div>
+           <h1> Register </h1>
+         </div>
+       );
+     }
+   }
+   export default Register;
+   
+   ```
+
+2. go back to `App.js` to make use of all this
+
+   ```react
+   import React, { Component } from 'react';
+   import { BrowserRouter as Router, Route } from 'react-router-dom';
+   
+   import Navbar from './components/layout/Navbar';
+   import Footer from './components/layout/Footer';
+   import Landing from './components/layout/Landing';
+   
+   import Register from './components/auth/Register';
+   import Login from './components/auth/Login';
+   
+   import './App.css';
+   
+   class App extends Component {
+     render() {
+       return (
+         <Router>
+           <div className="App">
+             <Navbar />
+             <Route exact path="/" component={Landing} />
+             <div className="container">
+               <Route exact path="/register" component={Register} />
+               <Route exact path="/login" component={Login} />
+             </div>
+             <Footer />
+           </div>
+         </Router>
+       );
+     }
+   }
+   
+   export default App;
+   
+   ```
+
+3. now we want the Login button on the navbar to link to the login page
+
+   ```react
+   import React, { Component } from 'react';
+   {/* Added Link from react router */}
+   import { Link } from 'react-router-dom';
+   
+   class Navbar extends Component {
+     render() {
+       return (
+         // Navbar
+         <div>
+           <nav className="navbar navbar-expand-sm navbar-dark bg-dark mb-4">
+             <div className="container">
+                 {/* Changed this */}
+               <Link className="navbar-brand" to="/">
+                 DevConnector
+               </Link>
+               <button
+                 className="navbar-toggler"
+                 type="button"
+                 data-toggle="collapse"
+                 data-target="#mobile-nav"
+               >
+                 <span className="navbar-toggler-icon" />
+               </button>
+   
+               <div className="collapse navbar-collapse" id="mobile-nav">
+                 <ul className="navbar-nav mr-auto">
+                   <li className="nav-item">
+                     <Link className="nav-link" to="/profiles">
+                       {' '}
+                       Developers
+                     </Link>
+                   </li>
+                 </ul>
+   
+                 <ul className="navbar-nav ml-auto">
+                   <li className="nav-item">
+                   	{/* Changed this */}
+                     <Link className="nav-link" to="/register">
+                       Sign Up
+                     </Link>
+                   </li>
+                   <li className="nav-item">
+                       {/* Changed this */}
+                     <Link clLinkssName="nav-link" to="/login">
+                       Login
+                     </Link>
+                   </li>
+                 </ul>
+               </div>
+             </div>
+           </nav>
+         </div>
+       );
+     }
+   }
+   
+   export default Navbar;
+   
+   ```
+
+4. same thing for the `Landing.js` page
+
+   ```react
+   import React, { Component } from 'react';
+   {/* Added Link from react router */}
+   import { Link } from 'react-router-dom';
+   
+   class Landing extends Component {
+     render() {
+       return (
+         // Landing
+         <div className="landing">
+           <div className="dark-overlay landing-inner text-light">
+             <div className="container">
+               <div className="row">
+                 <div className="col-md-12 text-center">
+                   <h1 className="display-3 mb-4">Developer Network</h1>
+                   <p className="lead">
+                     {' '}
+                     Create a developer profile/portfolio, share posts and get help
+                     from other developers
+                   </p>
+                   <hr />
+                   {/* Changed this */}
+                   <Link to="/register" className="btn btn-lg btn-info mr-2">
+                     Sign Up
+                   </Link>
+                   <Link to="/login" className="btn btn-lg btn-light">
+                     Login
+                   </Link>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   export default Landing;
+   ```
+
+
+
+### Signup Form and Component States
+

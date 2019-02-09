@@ -2295,3 +2295,267 @@ We are using a bootstrap framework to link the backend API to the frontend
 
 ### Signup Form and Component States
 
+Working on the Register component
+
+1. in `Register.js` we are going to bring inthe bootstrap register code and make a few edits, shown as comments
+
+   ```react
+   import React, { Component } from 'react';
+   
+   class Register extends Component {
+     // Register is a component so we need to make a constructor
+     constructor() {
+       super();
+       this.state = {
+         name: '',
+         email: '',
+         password: '',
+         password2: '',
+         errors: {
+           //Will use with Redux later
+         }
+       };
+   
+       //Binds onChange and onSubmit to the states object
+       this.onChange = this.onChange.bind(this);
+       this.onSubmit = this.onSubmit.bind(this);
+     }
+   
+     onChange(event) {
+       //Whenever user sets this off, we set state variables to whatever the user put in
+       this.setState({ [event.target.name]: event.target.value });
+     }
+   
+     //Whenever this gets set off, store whatever the user typed in as a state object and pass it out
+     onSubmit(event) {
+       event.preventDefault();
+   
+       const newUser = {
+         name: this.state.name,
+         email: this.state.email,
+         password: this.state.password,
+         password2: this.state.password2
+       };
+   
+       console.log(newUser);
+     }
+   
+     render() {
+       return (
+         <div className="register">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-8 m-auto">
+                 <h1 className="display-4 text-center">Sign Up</h1>
+                 {/* Added on Submit  */}
+                 <form onSubmit={this.onSubmit}>
+                   <div className="form-group">
+                     <input
+                       type="text"
+                       className="form-control form-control-lg"
+                       placeholder="Name"
+                       name="name"
+                       // link this input to that state value
+                       value={this.state.name}
+                       onChange={this.onChange}
+                     />
+                   </div>
+                   <div className="form-group">
+                     <input
+                       type="email"
+                       className="form-control form-control-lg"
+                       placeholder="Email Address"
+                       name="email"
+                       // link this input to that state value
+                       value={this.state.email}
+                       onChange={this.onChange}
+                     />
+                     <small className="form-text text-muted">
+                       This site uses Gravatar so if you want a profile image, use
+                       a Gravatar email
+                     </small>
+                   </div>
+                   <div className="form-group">
+                     <input
+                       type="password"
+                       className="form-control form-control-lg"
+                       placeholder="Password"
+                       name="password"
+                       // link this input to that state value
+                       value={this.state.password}
+                       onChange={this.onChange}
+                     />
+                   </div>
+                   <div className="form-group">
+                     <input
+                       type="password"
+                       className="form-control form-control-lg"
+                       placeholder="Confirm Password"
+                       name="password2"
+                       // link this input to that state value
+                       value={this.state.password2}
+                       onChange={this.onChange}
+                     />
+                   </div>
+                   <input type="submit" className="btn btn-info btn-block mt-4" />
+                 </form>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   export default Register;
+   ```
+
+2. Same thing for the login form, go to `auth/Login.js` and follow the 5 steps
+
+   ```react
+   import React, { Component } from 'react';
+   
+   class Login extends Component {
+     //Step 1: Create a constructor
+     constructor() {
+       super();
+       this.state = {
+         email: '',
+         password: '',
+         errors: {
+           //Will use with Redux later
+         }
+       };
+   
+       //Step 2: Add the bindings for these
+       //Binds onChange and onSubmit to the states object
+       this.onChange = this.onChange.bind(this);
+       this.onSubmit = this.onSubmit.bind(this);
+     }
+   
+     //Step 5: Create onChange and onSubmit functions
+     onChange(event) {
+       this.setState({ [event.target.name]: event.target.value });
+     }
+   
+     onSubmit(event) {
+       event.preventDefault();
+   
+       const currUser = {
+         email: this.state.email,
+         password: this.state.password
+       };
+   
+       console.log(currUser);
+     }
+   
+     render() {
+       return (
+         <div className="login">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-8 m-auto">
+                 <h1 className="display-4 text-center">Log In</h1>
+                 <p className="lead text-center">
+                   Sign in to your DevConnector account
+                 </p>
+                 {/* Step 4: Add onSubmit */}
+                 <form onSubmit={this.onSubmit}>
+                   <div className="form-group">
+                     <input
+                       type="email"
+                       className="form-control form-control-lg"
+                       placeholder="Email Address"
+                       name="email"
+                       //Step 3: link this input to that state value
+                       value={this.state.email}
+                       onChange={this.onChange}
+                     />
+                   </div>
+                   <div className="form-group">
+                     <input
+                       type="password"
+                       className="form-control form-control-lg"
+                       placeholder="Password"
+                       name="password"
+                       //Step 3: link this input to that state value
+                       value={this.state.password}
+                       onChange={this.onChange}
+                     />
+                   </div>
+                   <input type="submit" className="btn btn-info btn-block mt-4" />
+                 </form>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   export default Login;
+   ```
+
+   
+
+### Testing Registration without Redux
+
+Install inside `client` directory: `npm i axios` 
+
+1. Import `axios` into `Register.js`
+
+2. We can now use this to link the front to backend using `axios`
+
+   ```react
+   import React, { Component } from 'react';
+   //Step 1: Import axios
+   import axios from 'axios';
+   
+   class Register extends Component {
+     // Register is a component so we need to make a constructor
+     constructor() {
+       super();
+       this.state = {
+         name: '',
+         email: '',
+         password: '',
+         password2: '',
+         errors: {
+           //Will use with Redux later
+         }
+       };
+   
+       //Binds onChange and onSubmit to the states object
+       this.onChange = this.onChange.bind(this);
+       this.onSubmit = this.onSubmit.bind(this);
+     }
+   
+     onChange(event) {
+       //Whenever user sets this off, we set state variables to whatever the user put in
+       this.setState({ [event.target.name]: event.target.value });
+     }
+   
+     //Whenever this gets set off, store whatever the user typed in as a state object and pass it out
+     onSubmit(event) {
+       event.preventDefault();
+   
+       const newUser = {
+         name: this.state.name,
+         email: this.state.email,
+         password: this.state.password,
+         password2: this.state.password2
+       };
+   	
+       //Step 2: Create axios
+       axios
+       //throw a post-request to the api
+         .post('/api/users/register', newUser)
+         //then respond with the data
+         .then(res => console.log(res.data))
+         //For the errors, respond with the appropriate error
+         .catch(err => console.log(err.response.data));
+     }
+   ```
+
+
+
+### Now we want the Errors to Display under the Input
+

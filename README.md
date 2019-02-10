@@ -2742,3 +2742,206 @@ Install inside `client` directory: `npm i axios`
 
 ## Setting up Redux and Authentication
 
+What is Redux?
+
+Used to mainly share data between components
+
+Instead of passing things from component to component, a **single source** of truth goes to all of components.
+
+Like Profiles, Posts, likes, and all the things we know already.
+
+These are pieces of the code we want to share with other pieces.
+
+1. We need to install some things in `client` folder
+
+   ```
+   npm i redux react-redux redux-thunk
+   ```
+
+2. in `App.js` we wanna import stuff
+
+   ```react
+   import { Provider } from 'react-redux';
+   ```
+
+   and we want to wrap that around the <Router> too
+
+   ```react
+       return (
+         <Provider>
+         <Router>
+           <div className="App">
+             <Navbar />
+             <Route exact path="/" component={Landing} />
+             <div className="container">
+               <Route exact path="/register" component={Register} />
+               <Route exact path="/login" component={Login} />
+             </div>
+             <Footer />
+           </div>
+         </Router>
+         </Provider>
+   ```
+
+3. we need to create our store variable
+
+   ```react
+   import { createStore, applyMiddleware } from 'redux';
+   ...
+   const store = createStore((() => [], {}, applyMiddleware()));
+   ...
+   <Provider store={store}>
+           <Router>
+             <div className="App">
+               <Navbar />
+               <Route exact path="/" component={Landing} />
+               <div className="container">
+                 <Route exact path="/register" component={Register} />
+                 <Route exact path="/login" component={Login} />
+               </div>
+               <Footer />
+             </div>
+           </Router>
+         </Provider>
+   ```
+
+4. put the import and const store inside a new file inside `client/src/store.js`
+
+   ```react
+   import { createStore, applyMiddleware } from 'redux';
+   
+   const store = createStore((() => [], {}, applyMiddleware()));
+   
+   export default store;
+   
+   ```
+
+5. and import it back into `App.js`
+
+   ```react
+   import React, { Component } from 'react';
+   import { BrowserRouter as Router, Route } from 'react-router-dom';
+   import { Provider } from 'react-redux';
+   import store from './store';
+   
+   import Navbar from './components/layout/Navbar';
+   import Footer from './components/layout/Footer';
+   import Landing from './components/layout/Landing';
+   
+   import Register from './components/auth/Register';
+   import Login from './components/auth/Login';
+   
+   import './App.css';
+   
+   class App extends Component {
+     render() {
+       return (
+         <Provider store={store}>
+           <Router>
+             <div className="App">
+               <Navbar />
+               <Route exact path="/" component={Landing} />
+               <div className="container">
+                 <Route exact path="/register" component={Register} />
+                 <Route exact path="/login" component={Login} />
+               </div>
+               <Footer />
+             </div>
+           </Router>
+         </Provider>
+       );
+     }
+   }
+   
+   export default App;
+   
+   ```
+
+6. import `thunk` from `redux-thunk` and add it into the middleware line
+
+   `store.js`
+
+   ```react
+   import { createStore, applyMiddleware } from 'redux';
+   import thunk from 'redux-thunk';
+   
+   const middleware = [thunk];
+   
+   const store = createStore((() => [], {}, applyMiddleware(...middleware)));
+   
+   export default store;
+   ```
+
+7. we need a reducer now, so create `src/reducers/index.js`
+
+   ```react
+   import { combineReducers } from 'redux';
+   import authReducer from './authReducer';
+   
+   export default combineReducers({
+       auth: authReducer
+   })
+   ```
+
+8. and `src/reducers/authReducer.js`
+
+   ```react
+   const initialState = {
+     isAuthenticated: false,
+     user: {}
+   };
+   
+   export default function(state = initialState, action) {
+     switch (action.type) {
+       default:
+         return state;
+     }
+   }
+   ```
+
+9. update `store.js`
+
+   ```react
+   import { createStore, applyMiddleware } from 'redux';
+   import thunk from 'redux-thunk';
+   import rootReducer from './reducers';
+   
+   const initialState = {};
+   
+   const middleware = [thunk];
+   
+   const store = createStore(
+     rootReducer,
+     initialState,
+     applyMiddleware(...middleware)
+   );
+   
+   export default store;
+   
+   ```
+
+10. we need to bring in `compose` from redux to be able to call the redux chrome development extension
+
+    ```react
+    import { createStore, applyMiddleware, compose } from 'redux';
+    import thunk from 'redux-thunk';
+    import rootReducer from './reducers';
+    
+    const initialState = {};
+    
+    const middleware = [thunk];
+    
+    const store = createStore(
+      rootReducer,
+      initialState,
+      compose(
+        applyMiddleware(...middleware),
+        window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+      )
+    );
+    
+    export default store;
+    
+    ```
+
+11. 

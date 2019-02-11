@@ -2944,4 +2944,114 @@ These are pieces of the code we want to share with other pieces.
     
     ```
 
-11. 
+
+
+### Redux Action & Reducer Workflow
+
+Everything in Redux works in Actions, so we want to get rid of the old axios requests and replace them with Actions
+
+1. create `client/src/actions/authActions.js`
+
+2. This is where we are gonna add registration stuff
+
+3. make `type.js` in the same folder, but this is where we are going to create the types we are going to use
+
+   `export const TEST_DISPATCH = 'TEST_DISPATCH';`
+
+4. import this into `authActions` and create a new registerUser function
+
+   ```react
+   //bring in types
+   import { TEST_DISPATCH } from './types';
+   
+   //Register User
+   export const registeruser = userData => {
+     return {
+       type: TEST_DISPATCH,
+       payload: userData
+     };
+   };
+   
+   ```
+
+5. Now we import `types` into `authReducer` and fill the user info with the payload
+
+   ```react
+   //bring in types
+   import { TEST_DISPATCH } from '../actions/types';
+   
+   const initialState = {
+     isAuthenticated: false,
+     user: {}
+   };
+   
+   export default function(state = initialState, action) {
+     switch (action.type) {
+       case TEST_DISPATCH:
+       return {
+         //We want to take the initialState and add it into the spread operator
+         ...state,
+         //fills user with the payoad, which is the userData from actions.
+         user: action.payload
+       }
+       default:
+         return state;
+     }
+   }
+   ```
+
+6. We want to use redux for registration, so go to `src/components/Register.js` and bring in the `connect` function to connect react to redux
+
+   **NOTE: Container is a React component that works with Redux**
+
+   `import { connect } from 'react-redux';`
+
+7. now bring in the registerUser function from `authActions`
+
+   `import { registerUser } from '../../actions/authActions';`
+
+8. and then we update the `export default` line to connect react with redux
+
+   **NOTE: Second parameter is what we call**
+
+   `export default connect(null, { registerUser })(Register);`
+
+9. now we can replace the `axios` request with this
+
+   any action we bring in is stored in props, and now we can call this
+
+   `    this.props.registerUser(newUser);` **NOTE: Make sure to get rid of axios stuff**
+
+10. we want a dedicated reducer for auth, aka. we *will be replacing TEST_DISPATCH* with something else
+
+11. if we wanted to get any of the auth state into our component, we need to create a function
+
+    ```react
+    const mapStateToProps = (state) => ({
+        //auth comes from index.js, so be wary of name
+      auth: state.auth
+    });
+    ```
+
+12. and pop it in as the first parameter of 8
+
+    `export default connect(mapStateToProps, { registerUser })(Register);`
+
+13. Now we want to test this out
+
+    ``
+
+14. **now we want to map any free component we have to propTypes** this is just react mannerisms
+
+    `import PropTypes from 'prop-types';`
+
+    and we want to save the registerd user as a prop
+
+    ```react
+    Register.propTypes = {
+      registerUser: PropTypes.func.isRequired,
+      auth: PropTypes.object.isRequired
+    };
+    ```
+
+    

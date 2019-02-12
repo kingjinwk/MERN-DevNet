@@ -3344,3 +3344,160 @@ setup logout so the key gets destroyed in local storage
 
 
 ### Login Component -> Form Functionality
+
+now that we've authenticated the user through redux, we want to make sure that the Login component does just that
+
+1. in `components/auth/Login.js` we are going to want to import a few things:
+
+   ```react
+   import PropTypes from 'prop-types';
+   //to connect to redux
+   import { connect } from 'react-redux';
+   //login user function
+   import { loginUser } from '../../actions/authActions';
+   //classnames for validation
+   import classnames from 'classnames';
+   ```
+
+2. we want to go to our export, and connect redux
+
+   ```react
+   
+   Login.propTypes = {
+     loginUser: PropTypes.func.isRequired,
+     auth: PropTypes.object.isRequired,
+     errors: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     auth: state.auth,
+     errors: state.errors
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { loginUser }
+   )(Login);
+   ```
+
+3. we need to implement the errors in the render with classnames
+
+   ```react
+    render() {
+       //Create errors object
+       const { errors } = this.state;
+   
+       return (
+         <div className="login">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-8 m-auto">
+                 <h1 className="display-4 text-center">Log In</h1>
+                 <p className="lead text-center">
+                   Sign in to your DevConnector account
+                 </p>
+                 {/* Step 4: Add onSubmit */}
+                 <form onSubmit={this.onSubmit}>
+                   <div className="form-group">
+                     <input
+                       type="email"
+                       //Modfied this part for Redux
+                       className={classnames('form-control form-control-lg', {
+                         'is-invalid': errors.email
+                       })}                    
+                       placeholder="Email Address"
+                       name="email"
+                       //Step 3: link this input to that state value
+                       value={this.state.email}
+                       onChange={this.onChange}
+                     />
+                     {errors.email && (
+                       <div className="invalid-feedback">{errors.email}</div>
+                     )}
+                   </div>
+                   <div className="form-group">
+                     <input
+                       type="password"
+                       className={classnames('form-control form-control-lg', {
+                         'is-invalid': errors.password
+                       })}                     
+                       placeholder="Password"
+                       name="password"
+                       //Step 3: link this input to that state value
+                       value={this.state.password}
+                       onChange={this.onChange}
+                     />
+                     {errors.password && (
+                       <div className="invalid-feedback">{errors.password}</div>
+                     )}
+                   </div
+                       
+                       ....
+   ```
+
+4. we need to create our lifecycle method `componentWillReceiveProps`
+
+   ```javascript
+     //For Redux prop/component
+     componentWillReceiveProps(nextProps) {
+   
+         //we want to see if the user is authenticated
+       if(nextProps.auth.isAuthenticated) {
+         //redirect to dashboard
+         this.props.history.push('/dashboard');
+       }
+       if(nextProps.errors) {
+         //set state
+         this.setState({errors: nextProps.errors})
+       }
+     }
+   ```
+
+5. `onSubmit` should now call the action
+
+   ```javascript
+     onSubmit(event) {
+       event.preventDefault();
+   
+       const currUser = {
+         email: this.state.email,
+         password: this.state.password
+       };
+   
+       this.props.loginUser(currUser);
+     }
+   ```
+
+   
+
+```react
+//Login - Get User Login Token
+export const loginUser = userData => dispatch => {
+  //make axios post request to ...
+  axios
+    .post('/api/users/login', userData)
+    .then(res => {
+      //Save to local storage
+      const token = res.data.token;
+      //Set token to local storage (only stores strings, so make sure to convert; but tokens are already strings)
+      localStorage.setItem('jwtToken', token);
+      // Set token to Auth header in src/utils/setAuthToken.js
+      setAuthToken(token);
+      //We want to "set" the user and fill the user object with the token info
+      //we need jwt_decode module to do this
+      const decoded = jwt_decode(token);
+      //Set current user
+      dispatch(setCurrentUser(decoded));
+    })
+    //error catcher
+    .catch(err =>
+      dispatch({
+        type: GET_ERRORS,
+        payload: err.response.data
+      })
+    );
+};
+```
+
+
+

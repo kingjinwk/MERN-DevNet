@@ -3212,3 +3212,135 @@ Everything in Redux works in Actions, so we want to get rid of the old axios req
 ### Login Action & Set Current User w/ Login
 
 very difficult because we need to have the token saved on local storage
+
+we are going to design it so that if we have the token on local storage that is validated, we are going to send that with every request we make (save it temporarily, pretty much)
+
+request token -> access protected routes -> local storage -> recall it whenever we need to make a request
+
+setup logout so the key gets destroyed in local storage
+
+1. new action in `authAction.js` to login user and get token
+
+   ```react
+   //Login - Get User Login Token
+   export const loginUser = (userData) => dispatch => {
+       //make axios post request to ...
+       axios.post('/api/users/login', userData)
+           .then(red => {
+               //Save to local storage
+               const { token } = res.data;
+               //Set token to local storage (only stores strings, so make sure to convert; but tokens are already strings)
+               localStorage.setItem('jwtToken', token);
+               // Set token to Auth header in src/utils/setAuthToken.js
+               setAuthToken(token);
+           })
+           //error catcher
+           .catch(err => {
+               dispatch({
+                   type: GET_ERRORS,
+                   payload: err.response.data
+                 })
+           })
+   }
+   ```
+
+2. we neet to create `src/utils/setAuthToken.js` and fill it with axios post request to get the user token
+
+   ```javascript
+   //import axios to prevent us to manually make sure we have the token
+   import axios from 'axios';
+   
+   const setAuthToken = token => {
+     if (token) {
+       //Apply to every request
+       axios.defaults.header.common['Authorization'] = token;
+     } else {
+       //Delete Auth header if token is not there
+       delete axios.defaults.headers.common['Authorization'];
+     }
+   };
+   
+   export default setAuthToken;
+   ```
+
+3. now we import this into `authActions.js` 
+
+   `import setAuthToken from '../utils/setAuthToken';`
+
+4. set the user by extracting info from the token and putting it into the user object
+
+   - **NOTE: we need to install `jwtcode` for this**
+
+   - go to the `client` folder and
+
+     `npm i jwt-decode`
+
+   - import it into `authActions`
+
+     `import jwt_decode from 'jwt-decode';`
+
+5. use `jwt_decode` and a new function `setCurrentUser` to decode the token, and set the user with this payload
+
+   ```react
+               //We want to "set" the user and fill the user object with the token info
+               //we need jwt_decode module to do this
+               const decoded = jwt_decode(token);
+               //Set current user
+               dispatch(setCurrentUser(decoded));
+               
+               //Set logged in user
+   export const setCurrentUser = (decoded) => {
+       return {
+           type: SET_CURRENT_USER,
+           payload: decoded
+       }
+   }
+   ```
+
+6. we need to import `SET_CURRENT_USER` from types, and then we create it in `types.js`
+
+   `import { GET_ERRORS, SET_CURRENT_USER } from './types';`
+
+   `export const SET_CURRENT_USER = 'SET_CURRENT_USER';`
+
+7. and now we have to catch it in `authReducer` by importing it
+
+   `import { SET_CURRENT_USER } from '../actions/types';`
+
+   and we set a new case for it in the `function`
+
+   ```react
+       //case for setting user
+       case SET_CURRENT_USER:
+         return {
+           //current state
+           ...state,
+           //isauthenticated: check to see if decoded user is not empty
+           isAuthenticated: !isEmpty(action.payload),
+           //the action payload
+           user: action.payload
+         };
+   ```
+
+8. we need to make another `is-empty` function file in `client/src/validation/is-empty`, which is pretty much a copy of the is-empty we made for the backend
+
+   ```react
+   const isEmpty = value =>
+     value === undefined ||
+     value === null ||
+     (typeof value === 'object' && Object.keys(value).length === 0) ||
+     (typeof value === 'string' && value.trim().length === 0);
+   
+   export default isEmpty;
+   
+   ```
+
+9. bring into `authReducer`
+
+   `import isEmpty from '../validation/is-empty';`
+
+10. now our user object gets filled in with the payload
+
+
+
+### Login Component -> Form Functionality

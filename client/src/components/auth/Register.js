@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
-// import axios from 'axios';
 import classnames from 'classnames';
 //Used for connecting redux to this component
 import { connect } from 'react-redux';
 import { registerUser } from '../../actions/authActions';
 import PropTypes from 'prop-types';
+//import the router to be able to redirect users
+import { withRouter } from 'react-router-dom';
 
 class Register extends Component {
   // Register is a component so we need to make a constructor
@@ -25,6 +26,15 @@ class Register extends Component {
     this.onSubmit = this.onSubmit.bind(this);
   }
 
+  //Added to make components receive propsm, LIBRARY FUNCTION
+  //tests for certain properties, namely the errors property
+  //and if errors is included, add it to the component state
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.errors) {
+      this.setState({ errors: nextProps.errors });
+    }
+  }
+
   onChange(event) {
     //Whenever user sets this off, we set state variables to whatever the user put in
     this.setState({ [event.target.name]: event.target.value });
@@ -41,23 +51,15 @@ class Register extends Component {
       password2: this.state.password2
     };
 
-    this.props.registerUser(newUser);
-    // axios
-    //   .post('/api/users/register', newUser)
-    //   .then(res => console.log(res.data))
-    //   .catch(err => this.setState({ errors: err.response.data }));
+    this.props.registerUser(newUser, this.props.history);
   }
 
   render() {
-    //pull out user from this.props.auth
-    const { user } = this.props.auth;
-
     //Errors from classname, using deconstruction
     const { errors } = this.state;
 
     return (
       <div className="register">
-        {user ? user.name : null}
         <div className="container">
           <div className="row">
             <div className="col-md-8 m-auto">
@@ -144,14 +146,16 @@ class Register extends Component {
 
 Register.propTypes = {
   registerUser: PropTypes.func.isRequired,
-  auth: PropTypes.object.isRequired
+  auth: PropTypes.object.isRequired,
+  errors: PropTypes.object.isRequired
 };
 
 const mapStateToProps = state => ({
-  auth: state.auth
+  auth: state.auth,
+  errors: state.errors
 });
 
 export default connect(
   mapStateToProps,
   { registerUser }
-)(Register);
+)(withRouter(Register));

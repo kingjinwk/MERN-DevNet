@@ -3054,4 +3054,161 @@ Everything in Redux works in Actions, so we want to get rid of the old axios req
     };
     ```
 
+
+
+### Registration and Error Reducer w/ Redux
+
+1. move axios import into `authActions` 
+
+2. remove axios function from `Register.js`
+
+3. bring in the axios function to `authActions` and modify it:
+
+   ```react
+   //Register User
+   export const registerUser = userData => dispatch  => {
+           axios
+           //backend hits userdata
+         .post('/api/users/register', userData)
+           //and if it is successful, 
+         .then(res => console.log(res.data))
+         .catch(err => dispatch({
+             type: GET_ERRORS,
+             payload: err.response.data
+         }));
+   };
+   ```
+
+4. change `TEST_DISPATCH` to the official `GET_ERRORS`
+
+   `import { GET_ERRORS } from './types';`
+
+5. change the `TEST_DISPATCH` code in `types.js`
+
+   `import { GET_ERRORS } from './types';`
+
+6. get rid of test dispatch from `authReducer` and also the test case inside the default function
+
+7. now we create the **ErrorReducer**, copy most of `authReducer` and load the action with the payload, which includes errors
+
+   ```react
+   import { GET_ERRORS } from '../actions/types';
+   
+   const initialState = {
+     isAuthenticated: false,
+     user: {}
+   };
+   
+   export default function(state = initialState, action) {
+     switch (action.type) {
+       case GET_ERRORS:
+       //the payload includes the errors object from the server in authActions
+         return action.payload;
+       default:
+         return state;
+     }
+   }
+   ```
+
+8. in `Register.js` update the `mapStateToProps` function now that we have loaded up the right payloads
+
+   ```react
+   const mapStateToProps = state => ({
+     auth: state.auth,
+     errors: state.errors,
+     
+   });
+   ```
+
+9. **DON"T FORGET** to bring in the errorReducer to `index.js`
+
+   ```react
+   import { combineReducers } from 'redux';
+   import authReducer from './authReducer';
+   import errorReducer from './errorReducer';
+   
+   export default combineReducers({
+     auth: authReducer,
+     errors: errorReducer
+   });
+   ```
+
+10. we want to switch getting the errors to a new lifecycle method, add this function to `Register.js`
+
+    ```react
+      //Added to make components receive propsm, LIBRARY FUNCTION
+      //tests for certain properties, namely the errors property
+      //and if errors is included, add it to the component state
+      componentWillReceiveProps(nextProps) {
+        if (nextProps.errors) {
+          this.setState({ errors: nextProps.errors });
+        }
+      }
+    ```
+
+11. get rid of any testing lines
+
+    ```react
     
+        
+                {user ? user.name : null}
+    
+    ```
+
+12. add the errors line to `Register.propTypes`
+
+    ```react
+    Register.propTypes = {
+      registerUser: PropTypes.func.isRequired,
+      auth: PropTypes.object.isRequired,
+      errors: PropTypes.object.isRequired
+    };
+    ```
+
+13. Now the errors appear in REDUX!
+
+14. now when a user registers correctly, let's take them to the landing page
+
+    - we need to bring in `withRouter`
+
+      `import { withRouter } from 'react-router-dom'`
+
+    - go to the export line, and wrap the `Register` component 
+
+      ```react
+      export default connect(
+        mapStateToProps,
+        { registerUser }
+      )(withRouter(Register));
+      ```
+
+    - go to `this.props.registerUser` and enable us to use this.props.history to redirect an action.
+
+      `this.props.registerUser(newUser, this.props.history);`
+
+    - back in `authActions` catch the this.props.history we caught, and add the redirect link
+
+    ```react
+    //Register User
+    export const registerUser = (userData, history) => dispatch => {
+      axios
+        //backend hits userdata
+        .post('/api/users/register', userData)
+        //and if it is successful, redirect to login page
+        .then(res => history.push('/login'))
+        .catch(err =>
+          dispatch({
+            type: GET_ERRORS,
+            payload: err.response.data
+          })
+        );
+    };
+    ```
+
+15. Now when we login, we get redirected to the login!
+
+
+
+### Login Action & Set Current User w/ Login
+
+very difficult because we need to have the token saved on local storage

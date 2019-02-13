@@ -3468,36 +3468,296 @@ now that we've authenticated the user through redux, we want to make sure that t
      }
    ```
 
+6. we want to make some updates on `App.js` now
+
+   - import `jwt_decode` , `setAuthToken` and `setCurrentUser`
+
+     ```react
+     //importing these for Redux functionalities
+     import jwt_decode from 'jwt-decode';
+     import setAuthToken from './utils/setAuthToken';
+     import { setCurrentUser } from './actions/authActions';
+     ```
+
+   - Check for token with the imported functions
+
+     ```javascript
+     //44: Check for token
+     //If token exists in local storage
+     if (localStorage.jwtToken) {
+       //set auth token header auth
+       setAuthToken(localStorage.jwtToken);
+       //Decode token and get user info and exp
+       const decoded = jwt_decode(localStorage.jwtToken);
+       // set current user action, is authenticated
+       store.dispatch(setCurrentUser(decoded));
+     }
+     ```
+
+
+
+### Logout & Conditional Navbar Links
+
+almost completed with authActions
+
+1. in `authActions`, we are going to create a function to log a user out
+
+   ```react
+   //Log user out
+   export const logoutUser = () => dispatch => {
+     //remove token from local storage
+     localStorage.removeItem('jwtToken');
+     //remove the auth header for future requests
+     setAuthToken(false);
+     //set the current user to empty object, which will set isauthenticated to false (setting it back to initial state)
+     dispatch(setCurrentUser({}))
+   }
+   ```
+
+2. now go to `components/layout/Navbar.js` and connect it to redux by importing: 
+
+   ```javascript
+   //imported these to connect navbar to redux
+   import PropTypes from 'prop-types';
+   import { connect } from 'react-redux';
+   import { logoutUser } from '../../actions/authActions';
+   ```
+
+3. we want the navbar to show a different menu based on login state, so right before `export default Navbar`, let's write this `mapState` helper
+
+   ```react
+   Navbar.propTypes = {
+     logoutUser: PropTypes.func.isRequired,
+     auth: PropTypes.object.isRequired
+   }
    
+   const mapStateToProps = (state) => ({
+     auth: state.auth
+   })
+   
+   export default connect(mapStateToProps, { logoutUser })(Navbar);
+   ```
 
-```react
-//Login - Get User Login Token
-export const loginUser = userData => dispatch => {
-  //make axios post request to ...
-  axios
-    .post('/api/users/login', userData)
-    .then(res => {
-      //Save to local storage
-      const token = res.data.token;
-      //Set token to local storage (only stores strings, so make sure to convert; but tokens are already strings)
-      localStorage.setItem('jwtToken', token);
-      // Set token to Auth header in src/utils/setAuthToken.js
-      setAuthToken(token);
-      //We want to "set" the user and fill the user object with the token info
-      //we need jwt_decode module to do this
-      const decoded = jwt_decode(token);
-      //Set current user
-      dispatch(setCurrentUser(decoded));
-    })
-    //error catcher
-    .catch(err =>
-      dispatch({
-        type: GET_ERRORS,
-        payload: err.response.data
-      })
-    );
-};
-```
+4. go back to the render to pull out `isAuthenticated` in `Navbar.js`
+
+   ```javascript
+   import React, { Component } from 'react';
+   import { Link } from 'react-router-dom';
+   //imported these to connect navbar to redux
+   import PropTypes from 'prop-types';
+   import { connect } from 'react-redux';
+   import { logoutUser } from '../../actions/authActions';
+   
+   class Navbar extends Component {
+     onLogoutClick(event) {
+       event.preventDefault();
+       this.props.logoutUser();
+     }
+   
+     render() {
+       const { isAuthenticated, user } = this.props.auth;
+       const authLinks = (
+         <ul className="navbar-nav ml-auto">
+           <li className="nav-item">
+             <a
+               href=""
+               onClick={this.onLogoutClick.bind(this)}
+               className="nav-link">
+               <img
+                 // for the circle action
+                 className="rounded-circle"
+                 src={user.avatar}
+                 alt={user.name}
+                 style={{ width: '25px', marginRight: '5px' }}
+                 title="You must have a Gravatar connected to your email to display an image"
+               />
+               Logout
+             </a>
+           </li>
+         </ul>
+       );
+       const guestLinks = (
+         <ul className="navbar-nav ml-auto">
+           <li className="nav-item">
+             <Link className="nav-link" to="/register">
+               Sign Up
+             </Link>
+           </li>
+           <li className="nav-item">
+             <Link className="nav-link" to="/login">
+               Login
+             </Link>
+           </li>
+         </ul>
+       );
+       return (
+         // Navbar
+         <div>
+           <nav className="navbar navbar-expand-sm navbar-dark bg-dark mb-4">
+             <div className="container">
+               <Link className="navbar-brand" to="/">
+                 DevConnector
+               </Link>
+               <button
+                 className="navbar-toggler"
+                 type="button"
+                 data-toggle="collapse"
+                 data-target="#mobile-nav"
+               >
+                 <span className="navbar-toggler-icon" />
+               </button>
+   
+               <div className="collapse navbar-collapse" id="mobile-nav">
+                 <ul className="navbar-nav mr-auto">
+                   <li className="nav-item">
+                     <Link className="nav-link" to="/profiles">
+                       {' '}
+                       Developers
+                     </Link>
+                   </li>
+                 </ul>
+                 {/* displays link depending on auth level */}
+                 {isAuthenticated ? authLinks : guestLinks}
+               </div>
+             </div>
+           </nav>
+         </div>
+       );
+     }
+   }
+   
+   Navbar.propTypes = {
+     logoutUser: PropTypes.func.isRequired,
+     auth: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     auth: state.auth
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { logoutUser }
+   )(Navbar);
+   
+   ```
+
+5. when the token expires, we want the user to be logged out.
+
+   - in `App.js`, check for expired tokens
+
+     ```javascript
+     ...
+     //importing these for Redux functionalities
+     import jwt_decode from 'jwt-decode';
+     import setAuthToken from './utils/setAuthToken';
+     import { setCurrentUser, logoutUser } from './actions/authActions';
+     
+     import Navbar from './components/layout/Navbar';
+     import Footer from './components/layout/Footer';
+     import Landing from './components/layout/Landing';
+     
+     import Register from './components/auth/Register';
+     import Login from './components/auth/Login';
+     
+     import './App.css';
+     
+     //44: Check for token
+     //If token exists in local storage
+     if (localStorage.jwtToken) {
+       //set auth token header auth
+       setAuthToken(localStorage.jwtToken);
+       //Decode token and get user info and exp
+       const decoded = jwt_decode(localStorage.jwtToken);
+       // set current user action, is authenticated
+       store.dispatch(setCurrentUser(decoded));
+     
+       //Check for expired token
+       const currentTime = Date.now() / 1000;
+       if (decoded.exp < currentTime) {
+         //Logout the user
+         store.dispatch(logoutUser());
+         //TODO: Clear the current Profile
+         //Redirect to Login
+         window.location.href = '/login';
+       }
+     }
+     ...
+     ```
+
+6. if we are logged in, we don't wanna be able to access SignUp or Login, so in `Login.js` **and** `Register.js`, create a lifecycle method above `componenetWillReceiveProps` called `componentDidMount`
+
+   ```javascript
+     //Lifecycle method to just see if we are logged in
+     componentDidMount() {
+       if(this.props.auth.isAuthenticated) {
+         this.props.history.push('/dashboard');
+       }
+     }
+   ```
+
+7. bring in redux to `Landing.js` and also plug `componentDidMount` here too
+
+   ```react
+   import React, { Component } from 'react';
+   import { Link } from 'react-router-dom';
+   //Importing redux tools
+   import PropTypes from 'prop-types';
+   import { connect } from 'react-redux';
+   
+   class Landing extends Component {
+     //Lifecycle method to just see if we are logged in
+     //if so, we redirect to the dashboard
+     componentDidMount() {
+       if (this.props.auth.isAuthenticated) {
+         this.props.history.push('/dashboard');
+       }
+     }
+   
+     render() {
+       return (
+         // Landing
+         <div className="landing">
+           <div className="dark-overlay landing-inner text-light">
+             <div className="container">
+               <div className="row">
+                 <div className="col-md-12 text-center">
+                   <h1 className="display-3 mb-4">Developer Network</h1>
+                   <p className="lead">
+                     {' '}
+                     Create a developer profile/portfolio, share posts and get help
+                     from other developers
+                   </p>
+                   <hr />
+                   <Link to="/register" className="btn btn-lg btn-info mr-2">
+                     Sign Up
+                   </Link>
+                   <Link to="/login" className="btn btn-lg btn-light">
+                     Login
+                   </Link>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   Landing.propTypes = {
+     auth: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     auth: state.auth
+   });
+   
+   export default connect(mapStateToProps)(Landing);
+   
+   ```
 
 
 
+### Dashboard & Profile State
+
+Profile States & Reducers, creating the dashboard.

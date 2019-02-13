@@ -28,6 +28,13 @@ class Login extends Component {
     this.setState({ [event.target.name]: event.target.value });
   }
 
+  //Lifecycle method to just see if we are logged in
+  componentDidMount() {
+    if (this.props.auth.isAuthenticated) {
+      this.props.history.push('/dashboard');
+    }
+  }
+
   //For Redux prop/component
   componentWillReceiveProps(nextProps) {
     if (nextProps.auth.isAuthenticated) {

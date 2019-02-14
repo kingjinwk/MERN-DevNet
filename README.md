@@ -3758,6 +3758,196 @@ almost completed with authActions
 
 
 
-### Dashboard & Profile State
+## Dashboard & Profile State
 
 Profile States & Reducers, creating the dashboard.
+
+
+
+### TextFieldGroupInput Component
+
+we want different components for `div className='form-group'` to make things look cleaner
+
+1. create a new file `components/common/TextFieldGroup.js` and make it a `rcf` component, and then grab this from `Login.js`
+
+   ```react
+   import React from 'react';
+   //import classnames
+   import classnames from 'classnames';
+   import PropTypes from 'prop-Types';
+   
+   //This file has a lot of properties: which are passed in
+   const TextFieldGroup = ({
+     name,
+     placeholder,
+     value,
+     label,
+     error,
+     info,
+     type,
+     onChange,
+     disabled
+   }) => {
+     return (
+       <div className="form-group">
+         <input
+           //type is whatever tpy eis passed in
+           type={type}
+           // Modfied this part for Redux
+           className={classnames('form-control form-control-lg', {
+             'is-invalid': error
+           })}
+           placeholder={placeholder}
+           name={name}
+           // Step 3: link this input to that state value
+           value={value}
+           onChange={onChange}
+           disabled={disabled}
+         />
+         {info && <small className="form-text text-muted"> {info}</small>}
+         {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+       </div>
+     );
+   };
+   
+   TextFieldGroup.propTypes = {
+     name: PropTypes.string.isRequired,
+     placeholder: PropTypes.string,
+     value: PropTypes.string.isRequired,
+     info: PropTypes.string,
+     error: PropTypes.string,
+     type: PropTypes.string.isRequired,
+     onChange: PropTypes.func.isRequired,
+     disabled: PropTypes.string
+   };
+   
+   TextFieldGroup.defaultProps = {
+     type: 'text'
+   };
+   
+   export default TextFieldGroup;
+   
+   ```
+
+2. now, whenever we want a formgroup with an input field, like in `Login.js`, import the `TextFieldGroup` file we just made, and create a sort of template for all the stuff from `Login.js`
+
+   ```react
+   ...
+   //importing to turn all form-groups into components
+   import TextFieldGroup from '../common/TextFieldGroup';
+   ...
+   ...
+   render() {
+       //Create errors object
+       const { errors } = this.state;
+   
+       return (
+         <div className="login">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-8 m-auto">
+                 <h1 className="display-4 text-center">Log In</h1>
+                 <p className="lead text-center">
+                   Sign in to your DevConnector account
+                 </p>
+                 {/* Step 4: Add onSubmit */}
+                 <form onSubmit={this.onSubmit}>
+                   <TextFieldGroup
+                     placeholder="Email Address"
+                     name="email"
+                     type="email"
+                     value={this.state.email}
+                     onChange={this.onChange}
+                     error={errors.email}
+                   />
+                   <TextFieldGroup
+                     placeholder="Password"
+                     name="password"
+                     type="password"
+                     value={this.state.password}
+                     onChange={this.onChange}
+                     error={errors.password}
+                   />
+                   <input type="submit" className="btn btn-info btn-block mt-4" />
+                 </form>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   ..
+   ...
+   ...
+   ```
+
+3. Now we can go ahead and replace the `Register.js` field with this, so like above, import `TextFieldGroup` and do the same thing
+
+   ```react
+   //importing to turn all form-groups into components
+   import TextFieldGroup from '../common/TextFieldGroup';
+   ...
+   ...
+   render() {
+       //Errors from classname, using deconstruction
+       const { errors } = this.state;
+   
+       return (
+         <div className="register">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-8 m-auto">
+                 <h1 className="display-4 text-center">Sign Up</h1>
+                 {/* Added on Submit  */}
+                 <form noValidate onSubmit={this.onSubmit}>
+                   <TextFieldGroup
+                     placeholder="Name"
+                     name="name"
+                     type="text"
+                     value={this.state.name}
+                     onChange={this.onChange}
+                     error={errors.name}
+                   />
+                   <TextFieldGroup
+                     placeholder="Email Address"
+                     name="email"
+                     type="email"
+                     value={this.state.email}
+                     onChange={this.onChange}
+                     error={errors.email}
+                     info="This site uses Gravatar so if you want a profile image, use a Gravatar email"
+                   />
+                   <TextFieldGroup
+                     placeholder="Password"
+                     name="password"
+                     type="password"
+                     value={this.state.password}
+                     onChange={this.onChange}
+                     error={errors.password}
+                   />
+                   <TextFieldGroup
+                     placeholder="Confirm Password"
+                     name="password2"
+                     type="password"
+                     value={this.state.password2}
+                     onChange={this.onChange}
+                     error={errors.password2}
+                   />
+                   <input type="submit" className="btn btn-info btn-block mt-4" />
+                 </form>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   ```
+
+4. Now everything is a component, sweet. We continue to do the holy work.
+
+
+
+### Profile Reducer & Get Current Profile
+
+this is going to be a lot of work, let's go.
+

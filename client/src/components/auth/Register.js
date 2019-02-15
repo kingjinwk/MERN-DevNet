@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import classnames from 'classnames';
 //Used for connecting redux to this component
 import { connect } from 'react-redux';
 import { registerUser } from '../../actions/authActions';

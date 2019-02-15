@@ -4,8 +4,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 //login user function
 import { loginUser } from '../../actions/authActions';
-//classnames for validation
-import classnames from 'classnames';
+
 //importing to turn all form-groups into components
 import TextFieldGroup from '../common/TextFieldGroup';
 

@@ -3949,5 +3949,227 @@ we want different components for `div className='form-group'` to make things loo
 
 ### Profile Reducer & Get Current Profile
 
-this is going to be a lot of work, let's go.
+we are actually going to create our dashboard now
+
+1. `reducers/profileReducer.js` and import it into `index.js`
+
+   ```react
+   import { combineReducers } from 'redux';
+   import authReducer from './authReducer';
+   import errorReducer from './errorReducer';
+   import profileReducer from './profileReducer';
+   
+   export default combineReducers({
+     auth: authReducer,
+     errors: errorReducer,
+     profile: profileReducer
+   });
+   ```
+
+2. begin to initialize `profileReducer`
+
+   ```javascript
+   const initialState = {
+     profile: null,
+     profiles: null,
+     loading: false
+   };
+   
+   export default function(state = initialState, action) {
+     switch (action.type) {
+       default:
+         return state;
+     }
+   }
+   ```
+
+3. create a new type in `types.js`
+
+   ```react
+   export const GET_PROFILE = 'GET_PROFILE';
+   export const PROFILE_LOADING = 'PROFILE_LOADING';
+   export const PROFILE_NOT_FOUND = 'PROFILE_NOT_FOUND';
+   export const CLEAR_CURRENT_PROFILE = 'CLEAR_CURRENT_PROFILE';
+   export const GET_PROFILES = 'GET_PROFILES';
+   ```
+
+4. create the actions file `actions/profileActions.js` we want to create an aciton to get the current profile to hit the API profile endpoint
+
+   ```javascript
+   import axios from 'axios';
+   
+   import { GET_PROFILE, PROFILE_LOADING, GET_ERRORS } from './types';
+   
+   // Get current profile
+   export const getCurrentProfile = () => dispatch => {
+     //setprofileloading to set the profile to be loading before the actual request
+     dispatch(setProfileLoading());
+     //get current user profile
+     axios
+       .get('/api/profile')
+       .then(res =>
+         dispatch({
+           type: GET_PROFILE,
+           payload: res.data
+         })
+       )
+       //If there isn't a profile, just return an empty profile and a button to create one, instead of errors
+       .catch(err =>
+         dispatch({
+           type: GET_PROFILE,
+           payload: {}
+         })
+       );
+   };
+   
+   //Profile loading - just lets reducer know this is loading
+   export const setProfileLoading = () => {
+     return {
+       type: PROFILE_LOADING
+     };
+   };
+   ```
+
+5. and back in our `profileReducer` import the types and such
+
+   ```
+   import { GET_PROFILE, PROFILE_LOADING } from '../actions/types';
+   
+   const initialState = {
+     profile: null,
+     profiles: null,
+     loading: false
+   };
+   
+   export default function(state = initialState, action) {
+     switch (action.type) {
+       case PROFILE_LOADING:
+         return {
+           ...state,
+           loading: true
+         };
+       case GET_PROFILE:
+         return {
+           ...state,
+           profile: action.payload,
+           loading: false
+         };
+       default:
+         return state;
+     }
+   }
+   ```
+
+6. create `components/dashboard` `dashboard.js`, rcc tab
+
+   ```react
+   import React, { Component } from 'react';
+   //connect it to redux
+   import PropTypes from 'prop-types';
+   import { connect } from 'react-redux';
+   import { getCurrentProfile } from '../../actions/profileActions';
+   
+   class Dashboard extends Component {
+     //ajax request to call this right away
+     componentDidMount() {
+       this.props.getCurrentProfile();
+     }
+   
+     render() {
+       return (
+         <div>
+           <h1> Dashboard </h1>
+         </div>
+       );
+     }
+   }
+   
+   export default connect(
+     null,
+     { getCurrentProfile }
+   )(Dashboard);
+   
+   ```
+
+7. create the route in `App.js` 
+
+   ```react
+   import Dashboard from './components/dashboard/Dashboard';
+   
+   ...
+   ...
+               <div className="container">
+                 <Route exact path="/register" component={Register} />
+                 <Route exact path="/login" component={Login} />
+                 <Route exact path="/dashboard" component={Dashboard} />
+               </div>
+   ...
+   ...
+   ```
+
+8. now the dashboard should work, make sure to delete `classnames` import from `Register` and `Login` because we replaced them with components
+
+9. We want the dashboard to return something else
+
+   1. import `CLEAR_CURRENT_PROFILE`
+
+   2. create a new function
+
+      ```javascript
+      //Clear Profile
+      export const clearCurrentProfile = () => {
+        return {
+          type: CLEAR_CURRENT_PROFILE
+        };
+      };
+      ```
+
+   3. import this into `profileReducer` and create a case
+
+      ```javascript
+      import { GET_PROFILE, PROFILE_LOADING, CLEAR_CURRENT_PROFILE } from '../actions/types';
+      ...
+      ...
+      ...
+            case CLEAR_CURRENT_PROFILE:
+              return{
+                  ...state,
+                  profile: null
+              }
+      ```
+
+10. go to `Navbar.js` and bring in another button to click
+
+    ```react
+    //For importing 
+    import { clearCurrentProfile } createRequireFromPath, '../../actions/profileActions';
+    import { createRequireFromPath } from 'module';
+    
+    class Navbar extends Component {
+      onLogoutClick(event) {
+        event.preventDefault();
+        //Clear profile
+        this.props.clearCurrentProfile();
+        this.props.logoutUser();
+      }
+    
+        ...
+        ...
+        
+    export default connect(
+      mapStateToProps,
+      { logoutUser, clearCurrentProfile }
+    )(Navbar);
+    ```
+
+11. go back to `App.js` and clear the dispatch as we planned to before
+
+    ```react
+        //TODO: Clear the current Profile
+        store.dispatch(clearCurrentProfile);
+    ```
+
+    
+
+### STARTING THE DASHBOARD
 

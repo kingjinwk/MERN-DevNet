@@ -4173,3 +4173,782 @@ we are actually going to create our dashboard now
 
 ### STARTING THE DASHBOARD
 
+So far we created the profile reducer and actions, and now we want to make sure that the dashboard works
+
+1. create a `mapStateToProps` in `Dashboard.js`
+
+   ```javascript
+   const mapStateToProps = state => ({
+     profile: state.profile,
+     auth: state.auth
+   });
+   ```
+
+2. set up `PropTypes`
+
+   ```javascript
+   Dashboard.propTypes = {
+     getCurrentProfile: PropTypes.func.isRequired,
+     auth: PropTypes.object.isRequired,
+     profile: PropTypes.object.isRequired
+   };
+   ```
+
+3. We need to make sure that `profile state` is not `null` before we return anything
+
+   ```react
+     render() {
+       //To make sure that profile state is not null
+       //get the user from the auth.state
+       const { user } = this.props.auth;
+       const { profile, loading } = this.props.profile;
+   
+       let dashboardContent;
+       //if profile is null OR loading is true
+       if (profile === null || loading) {
+         //we're going to add a spinner here while loading
+         dashboardContent = <h4>Loading ...</h4>;
+       } else {
+         //and the output is here
+         dashboardContent = <h1>Hello</h1>;
+       }
+   
+       return (
+         <div className="dashboard">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-12">
+                 <h1 className="display-4">Dashboard</h1>
+                 {dashboardContent}
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   ```
+
+4. now we want to add a spinner with a gif image
+
+5. make a new file in `common/Spinner.js`
+
+   ```react
+   import React from 'react';
+   //bring in the spinner image
+   import spinner from './spinner.gif';
+   
+   export default function Spinner() {
+     return (
+       <div>
+         <img
+           src={spinner}
+           style={{ width: '200px', margin: 'auto', display: 'block' }}
+           alt="Loading ..."
+         />
+       </div>
+     );
+   }
+   ```
+
+6. bring this into the dashboard now
+
+   ```react
+   //Import the spinner
+   import Spinner from '../common/Spinner';
+   
+   ...
+   ...
+   
+   return (
+         <div className="dashboard">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-12">
+                 <h1 className="display-4">Dashboard</h1>
+                 {dashboardContent}
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+   ```
+
+7. now the spinner is done, if the user does not have a profile we want for them to create a profile, if the user has a profile, we want to display the dashboard.
+
+   ```react
+   //Importing for create-profile link
+   import { Link } from 'react-router-dom';
+   ...
+   ...
+   ...
+   render() {
+       //To make sure that profile state is not null
+       //get the user from the auth.state
+       const { user } = this.props.auth;
+       const { profile, loading } = this.props.profile;
+   
+       let dashboardContent;
+       //if profile is null OR loading is true
+       if (profile === null || loading) {
+         //we're going to add a spinner here while loading
+         dashboardContent = <Spinner />;
+       } else {
+         //check if the logged in user has profile data
+         if (Object.keys(profile).length > 0) {
+           //something is in this object, they have a profile and we want to display it
+           dashboardContent = <h4> TODO: Display Profile </h4>;
+         } else {
+           //they do not have a profile, so send them to create-a-profile link
+           //Make sure to import Link
+           dashboardContent = (
+             <div>
+               <p className="lead text-muted">Welcome {user.name}</p>
+               <p>You have not set up a profile, set one up:</p>
+               <Link to="/create-profile" className="btn btn-lg btn-info">
+                 Create Profile
+               </Link>
+             </div>
+           );
+         }
+       }
+    ...
+    ...
+    ...
+   ```
+
+8. set up a private route so you can't see the dashboard when you are logged out
+
+
+
+### Private Routes for Dashboard
+
+using **protected routes** with React, we want to be able to set up a private path component
+
+1. `common/PrivateRoute.js`
+
+   ```javascript
+   import React from 'react';
+   import { Route, Redirect } from 'react-router-dom';
+   //for redux, in case we need to see if user is authenticated or now
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   import { stat } from 'fs';
+   const PrivateRoute = ({ component: Component, auth, ...rest }) => (
+     <Route
+       {...rest}
+       render={props =>
+         //if we are logged in
+         auth.isAuthenticated === true ? (
+           //load the component if we are
+           <Component {...props} />
+         ) : (
+           //otherwise redirect to login
+           <Redirect to="/login" />
+         )
+       }
+     />
+   );
+   PrivateRoute.propTypes = {
+     auth: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     auth: stat.auth
+   });
+   
+   export default connect(mapStateToProps)(PrivateRoute);
+   
+   ```
+
+2. import this into `App.js`
+
+   ```react
+   import PrivateRoute from './components/common/PrivateRoute';
+   import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+   
+   ...
+   ...
+   ...
+   return (
+         <Provider store={store}>
+           <Router>
+             <div className="App">
+               <Navbar />
+               <Route exact path="/" component={Landing} />
+               <div className="container">
+                 <Route exact path="/register" component={Register} />
+                 <Route exact path="/login" component={Login} />
+                 <PrivateRoute exact path="/dashboard" component={Dashboard} />
+               </div>
+               <Footer />
+             </div>
+           </Router>
+         </Provider>
+       );
+   ```
+
+3. we are going to now import `Switch` and make sure every private route is wrapped in the switch (in `App.js`)
+
+   ```react
+                 <Route exact path="/login" component={Login} />
+                 <Switch>
+                   <PrivateRoute exact path="/dashboard" component={Dashboard} />
+                 </Switch>
+   ```
+
+4. now the dashboard is locked when you are not logged in, the **SWITCH** is what makes redirecting upon logout possible.
+
+
+
+### CreateProfile Component & Route
+
+let's actually make the component to create a profile
+
+1. `components/create-profile/CreateProfile.js`
+
+   ```react
+   import React, { Component } from 'react';
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   //Step 4: Text Field Groups
+   import TextFieldGroup from '../common/TextFieldGroup';
+   
+   class CreateProfile extends Component {
+     //Step 1: create the component state values (the fields)
+     constructor(props) {
+       super(props);
+       this.state = {
+         //toggle
+         displaySocialInputs: false,
+         handle: '',
+         company: '',
+         website: '',
+         location: '',
+         status: '',
+         skills: '',
+         githubusername: '',
+         bio: '',
+         twitter: '',
+         facebook: '',
+         linkedin: '',
+         youtube: '',
+         instagram: '',
+         errors: {}
+       };
+     }
+   
+     //Step 5: Create the inside of the form
+     render() {
+       return (
+         <div className="create-profile">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-8 m-auto">
+                 <h1 className="display-4 text-center">Create Your Profile </h1>
+                 <p className="p lead text-center">
+                   We need some info to make your profile stand out:
+                 </p>
+                 <small className="d-block pb-3">* = required fields</small>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   //Step 3: PropTypes
+   CreateProfile.propTypes = {
+     profile: PropTypes.object.isRequired,
+     errors: PropTypes.object.isRequired
+   };
+   
+   //Step 2: mapStateToProps
+   const mapStateToProps = state => ({
+     profile: state.profile,
+     errors: state.errors
+   });
+   export default connect(mapStateToProps)(CreateProfile);
+   ```
+
+2. now we wnat to make sure this doesn't affect routing: go to `App.js` and bring it in
+
+   ```react
+   import CreateProfile from './components/create-profile/CreateProfile';
+   ```
+
+3. create a private route to this in `App.js`
+
+   ```react
+                 <Switch>
+                   <PrivateRoute
+                     exact
+                     path="/create-profile"
+                     component={CreateProfile}
+                   />
+                 </Switch>
+   ```
+
+4. The links work!
+
+
+
+### Form Input Field Components
+
+we need for select-form and text-fields, and also url-components
+
+1. `common/TextAreaFieldGroup.js` and copy-paste `TextFieldGroup` code inside it;
+
+   ```javascript
+   import React from 'react';
+   //import classnames
+   import classnames from 'classnames';
+   import PropTypes from 'prop-types';
+   
+   //This file has a lot of properties: which are passed in
+   const TextAreaFieldGroup = ({
+     name,
+     placeholder,
+     value,
+     error,
+     info,
+     onChange
+   }) => {
+     return (
+       <div className="form-group">
+         <textarea
+           // Modfied this part for Redux
+           className={classnames('form-control form-control-lg', {
+             'is-invalid': error
+           })}
+           placeholder={placeholder}
+           name={name}
+           // Step 3: link this input to that state value
+           value={value}
+           onChange={onChange}
+         />
+         {info && <small className="form-text text-muted"> {info}</small>}
+         {error && <div className="invalid-feedback">{error}</div>}
+       </div>
+     );
+   };
+   
+   TextAreaFieldGroup.propTypes = {
+     name: PropTypes.string.isRequired,
+     placeholder: PropTypes.string,
+     value: PropTypes.string.isRequired,
+     info: PropTypes.string,
+     error: PropTypes.string,
+     onChange: PropTypes.func.isRequired
+   };
+   
+   export default TextAreaFieldGroup;
+   
+   ```
+
+2. create `common/SelectListGroup.js` for the Selection List component and copy-paste `TextAreaFieldGroup` and make some modifications
+
+   ```react
+   import React from 'react';
+   //import classnames
+   import classnames from 'classnames';
+   import PropTypes from 'prop-types';
+   
+   //This file has a lot of properties: which are passed in
+   const SelectListGroup = ({
+     name,
+     value,
+     error,
+     info,
+     onChange,
+     //Step 1: we need this new one
+     options
+   }) => {
+     //Step 2: pull options out of the options array
+     const selectOptions = options.map(option => (
+       <option key={option.label} value={option.value}>
+         {option.label}
+       </option>
+     ));
+   
+     return (
+       <div className="form-group">
+         <select
+           // Modfied this part for Redux
+           className={classnames('form-control form-control-lg', {
+             'is-invalid': error
+           })}
+           name={name}
+           // Step 3: link this input to that state value
+           value={value}
+           onChange={onChange}
+         >
+           {selectOptions}
+         </select>
+         {info && <small className="form-text text-muted"> {info}</small>}
+         {error && <div className="invalid-feedback">{error}</div>}
+       </div>
+     );
+   };
+   
+   SelectListGroup.propTypes = {
+     name: PropTypes.string.isRequired,
+     value: PropTypes.string.isRequired,
+     info: PropTypes.string,
+     error: PropTypes.string,
+     onChange: PropTypes.func.isRequired,
+     options: PropTypes.array.isRequired
+   };
+   
+   export default SelectListGroup;
+   
+   ```
+
+3. create `common/InputGroup.js` and copy from `TextAreaFieldGroup` and make some changes
+
+   ```react
+   import React from 'react';
+   //import classnames
+   import classnames from 'classnames';
+   import PropTypes from 'prop-types';
+   
+   //This file has a lot of properties: which are passed in
+   const InputGroup = ({
+     name,
+     placeholder,
+     value,
+     error,
+     icon,
+     type,
+     onChange
+   }) => {
+     return (
+       <div className="input-group mb-3">
+         <div className="input-group-prepend">
+           <span className="input-group-text">
+             <i className={icon} />
+           </span>
+         </div>
+         <input
+           className={classnames('form-control form-control-lg', {
+             'is-invalid': error
+           })}
+           placeholder={placeholder}
+           name={name}
+           value={value}
+           onChange={onChange}
+         />
+         {error && <div className="invalid-feedback">{error}</div>}
+       </div>
+     );
+   };
+   
+   InputGroup.propTypes = {
+     name: PropTypes.string.isRequired,
+     placeholder: PropTypes.string,
+     value: PropTypes.string.isRequired,
+     icon: PropTypes.string,
+     error: PropTypes.string,
+     type: PropTypes.string.isRequired,
+     onChange: PropTypes.func.isRequired
+   };
+   
+   //Need this
+   InputGroup.defaultProps = {
+     type: 'text'
+   };
+   
+   export default InputGroup;
+   ```
+
+4. import all these into `CreateProfile.js`
+
+   ```javascript
+   //Step 5: Import other form groups
+   import TextAreaFieldGroup from '../common/TextAreaFieldGroup';
+   import SelectListGroup from '../common/SelectListGroup';
+   import InputGroup from '../common/InputGroup';
+   ```
+
+5. noice noice noice
+
+
+
+### Create Profile Form Fields
+
+we have all the components, we just need to add the fields now
+
+1. `CreateProfile.js` go under `small` bracket and create `onSubmit` actions, further notes in code comments
+
+   ```react
+   <form onSubmit={this.onSubmit}>
+                   <TextFieldGroup
+                     placeholder="* Profile Handle"
+                     name="handle"
+                     value={this.state.handle}
+                     onChange={this.onChange}
+                     error={errors.handle}
+                     info="A unique handle for your profile url"
+                   />
+                 </form>
+   ```
+
+2. bring in `errors` above the `return`
+
+   ```react
+   render() {
+       //so we know what errors are
+       const { errors } = this.state;
+   
+       return (
+         <div className="create-profile">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-8 m-auto">
+                 <h1 className="display-4 text-center">Create Your Profile </h1>
+                   ...
+                   ..
+                   .
+   ```
+
+3. bind `onChange` and `onSubmit`
+
+   ```react
+   constructor(props) {
+       super(props);
+       this.state = {
+         //toggle
+         displaySocialInputs: false,
+         handle: '',
+         company: '',
+         website: '',
+         location: '',
+         status: '',
+         skills: '',
+         githubusername: '',
+         bio: '',
+         twitter: '',
+         facebook: '',
+         linkedin: '',
+         youtube: '',
+         instagram: '',
+         errors: {}
+       };
+   
+       //53:2 bind onChange and onSubmit
+       this.onChange = this.onChange.bind(this);
+       this.onSubmit = this.onSubmit.bind(this);
+     }
+   ```
+
+4. make functions for these
+
+   ```react
+    //53:3 set up functions for the on-commands
+     onChange(event) {
+       this.setState({ [event.target.name]: event.target.value });
+     }
+   
+     onSubmit(event) {
+       event.preventDefault();
+       console.log('submit');
+     }
+   ```
+
+5. Woo! now the handle field is there
+
+6. now, for the select-list, we can use our `SelectListGroup` component we just made, but first let's create the options we need above the `return`
+
+   ```react
+       //declaring the options
+       const options = [
+         { label: '* Select Professional Status', value: 0 },
+         { label: 'Developer', value: 'Developer' },
+         { label: 'Junior Developer', value: 'Junior Developer' },
+         { label: 'Senior Developer', value: 'Senior Developer' },
+         { label: 'Manager', value: 'Manager' },
+         { label: 'Student', value: 'Student' },
+         { label: 'Instructor', value: 'Instructor' },
+         { label: 'Intern', value: 'Intern' },
+         { label: 'Designer', value: 'Designer' },
+         { label: 'Other', value: 'Other' }
+       ];
+   ```
+
+7. now we create the select field component under the `TextFieldGroup` div
+
+   ```react
+                   <SelectListGroup
+                     placeholder="Status"
+                     name="status"
+                     value={this.state.status}
+                     onChange={this.onChange}
+                     options={options}
+                     error={errors.status}
+                     info="Current place in career"
+                   />
+   ```
+
+8. we need more field groups
+
+   ```react
+                 <form onSubmit={this.onSubmit}>
+                   <TextFieldGroup
+                     placeholder="* Profile Handle"
+                     name="handle"
+                     value={this.state.handle}
+                     onChange={this.onChange}
+                     error={errors.handle}
+                     info="A unique handle for your profile url"
+                   />
+                   <SelectListGroup
+                     placeholder="Status"
+                     name="status"
+                     value={this.state.status}
+                     onChange={this.onChange}
+                     options={options}
+                     error={errors.status}
+                     info="Current place in career"
+                   />
+                   <TextFieldGroup
+                     placeholder="Company"
+                     name="company"
+                     value={this.state.company}
+                     onChange={this.onChange}
+                     error={errors.company}
+                     info="Current company (optional)"
+                   />
+                   <TextFieldGroup
+                     placeholder="Website"
+                     name="website"
+                     value={this.state.website}
+                     onChange={this.onChange}
+                     error={errors.website}
+                     info="Personal / Professional website (optional)"
+                   />
+                   <TextFieldGroup
+                     placeholder="Location"
+                     name="location"
+                     value={this.state.location}
+                     onChange={this.onChange}
+                     error={errors.location}
+                     info="Where are you based? (City, State) (optional)"
+                   />
+                   <TextFieldGroup
+                     placeholder="* Skills"
+                     name="skills"
+                     value={this.state.skills}
+                     onChange={this.onChange}
+                     error={errors.skills}
+                     info="Please use comma separated values (e.g Python, HTML, Apex Legends)"
+                   />
+                   <TextFieldGroup
+                     placeholder="Github Username"
+                     name="githubusername"
+                     value={this.state.githubusername}
+                     onChange={this.onChange}
+                     error={errors.githubusername}
+                     info="Enter your github username for your latest repos and links"
+                   />
+                   <TextAreaFieldGroup
+                     placeholder="Short Bio"
+                     name="bio"
+                     value={this.state.compabiony}
+                     onChange={this.onChange}
+                     error={errors.bio}
+                     info="Short, descriptive bio of yourself"
+                   />
+   ```
+
+9. now we need to create the optional button-click-reveal menu for the social media links
+
+   ```react
+   <button
+                       onClick={() => {
+                         this.setState(prevState => ({
+                           displaySocialInputs: !prevState.displaySocialInputs
+                         }));
+                       }}
+                       className="btn btn-light"
+                     >
+                       Add Social Media Links
+                     </button>
+                     <span className="text-muted">Optional</span>
+   ```
+
+10. we want a variable to hold the social media links, so create under `div`
+
+    ```react
+                    {socialInputs}
+                    <input
+                      type="submit"
+                      value="Submit"
+                      className="btn btn-info btn-block mt-4"
+                    />
+    ```
+
+11. now we want `{socialInputs}` to actually be something, so update the errors line to also pull out the socialInputs
+
+    ```react
+       //so we know what errors are
+        const { errors, displaySocialInputs } = this.state;
+        
+       let socialInputs;
+        if (displaySocialInputs) {
+          socialInputs = (
+            <div>
+              <InputGroup
+                placeholder="Twitter Profile URL"
+                name="twitter"
+                icon="fab fa-twitter"
+                value={this.state.twitter}
+                onChange={this.onChange}
+                error={errors.twitter}
+              />
+              <InputGroup
+                placeholder="Facebook Profile URL"
+                name="facebook"
+                icon="fab fa-facebook"
+                value={this.state.facebook}
+                onChange={this.onChange}
+                error={errors.facebook}
+              />
+              <InputGroup
+                placeholder="LinkedIn Profile URL"
+                name="linkedin"
+                icon="fab fa-linkedin"
+                value={this.state.linkedin}
+                onChange={this.onChange}
+                error={errors.linkedin}
+              />
+              <InputGroup
+                placeholder="Youtube Profile URL"
+                name="youtube"
+                icon="fab fa-youtube"
+                value={this.state.youtube}
+                onChange={this.onChange}
+                error={errors.youtube}
+              />
+              <InputGroup
+                placeholder="Instagram Profile URL"
+                name="instagram"
+                icon="fab fa-instagram"
+                value={this.state.instagram}
+                onChange={this.onChange}
+                error={errors.instagram}
+              />
+            </div>
+          );
+        }
+    ...
+    ...
+    ...
+    ```
+
+12. Now that Works! Icons come from fontawesome; awesome.
+
+
+
+### Create a Profile (Functionality)
+
+We want to actually be able to create a profile now.

@@ -4902,7 +4902,7 @@ we have all the components, we just need to add the fields now
                 name="twitter"
                 icon="fab fa-twitter"
                 value={this.state.twitter}
-                onChange={this.onChange}
+                onChange={this.onChange}s
                 error={errors.twitter}
               />
               <InputGroup
@@ -4952,3 +4952,201 @@ we have all the components, we just need to add the fields now
 ### Create a Profile (Functionality)
 
 We want to actually be able to create a profile now.
+
+1. in `profileActions.js` create an action to create a profile
+
+   ```javascript
+   //Create a new Profile, history used for redirecting with router
+   export const createProfile = (profileData, history) => dispatch => {
+     axios
+       .post('/api/profile', profileData)
+       .then(res => history.push('/dashboard'))
+       .catch(err =>
+         dispatch({
+           //make sure to bring in GET_ERRORS type
+           type: GET_ERRORS,
+           payload: err.reponse.data
+         })
+       );
+   };
+   ```
+
+2. create a componentwillreceiveprops in `CreateProfile.js`
+
+   ```javascript
+     //For Create Profile from profileActions
+     componentWillReceiveProps(nextProps) {
+       if (nextProps.errors) {
+         //fills the state with the error
+         this.setState({ errors: nextProps.errors });
+       }
+     }
+   ```
+
+3. we need to actually call the Create Profile action, so import 
+
+   ```javascript
+   //Create profile function
+   import { createProfile } from '../../actions/profileActions';
+   import { withRouter } from 'react-router-dom';
+   ...
+   ...
+   ...
+   
+   export default connect(
+     mapStateToProps,
+     { createProfile }
+   )(withRouter(CreateProfile));
+   ```
+
+4. **NOTE: Error because the Add Social Media button needs to be typed as a button, or else it just submits the whole form** `CreateProfile.js`
+
+   ```javascript
+   <div className="mb-3">
+                     <button
+                     type="button"
+                       onClick={() => {
+                         this.setState(prevState => ({
+                           displaySocialInputs: !prevState.displaySocialInputs
+                         }));
+                       }}
+                       className="btn btn-light"
+                     >
+   ```
+
+5. NOW WE CAN SUBMIT A PROFILE!!!!
+
+
+
+### Dashboard & Profile State pt.2: Display Profile
+
+We need to display the profile now
+
+1. new file `dashboard/ProfileActions.js` 
+
+2. we want to go to `Dashboard.js` and grab this line
+
+   ```react
+           //if they are logged in, we want their username to be a link
+           dashboardContent = (
+             <div>
+               <p className="lead text-muted">
+                 Welcome <Link to={`/profile/${profile.handle}`}>{user.name}</Link>
+               </p>
+             </div>
+           );
+   ```
+
+3. import `ProfileActions` into `Dashboard.js` and add Profile Actions under the thing we created in step 2.
+
+   ```react
+   dashboardContent = (
+             <div>
+               <p className="lead text-muted">
+                 Welcome <Link to={`/profile/${profile.handle}`}>{user.name}</Link>
+               </p>
+               <ProfileActions/>
+             </div>
+           );
+   ```
+
+4. We are now going to create `ProfileActions.js`
+
+   ```react
+   import React from 'react';
+   import { Link } from 'react-router-dom';
+   
+   const ProfileActions = () => {
+     return (
+       <div className="btn-group mb-4" role="group">
+         <Link to="/edit-profile" className="btn btn-light">
+           <i className="fas fa-user-circle text-info mr-1" /> Edit Profile
+         </Link>
+         <Link to="add-experience" className="btn btn-light">
+           <i className="fab fa-black-tie text-info mr-1" />
+           Add Experience
+         </Link>
+         <Link to="add-education" className="btn btn-light">
+           <i className="fas fa-graduation-cap text-info mr-1" />
+           Add Education
+         </Link>
+       </div>
+     );
+   };
+   
+   export default ProfileActions;
+   ```
+
+5. now we have the buttons on the dashboard done
+
+6. **WE WANT TO DELETE THE ACCOUNT NOW**
+
+   ```react
+               {/* TODO: exp and education */}
+               <div style={{ marginBottom: '60px' }} />
+               <button
+                 onClick={this.onDeleteClick.bind(this)}
+                 className="btn btn-danger"
+               >
+                 Delete My Account
+               </button>
+   ```
+
+7. create the `onDeleteClick` function, import it, and also declare it on the Redux connect function
+
+   ```react
+     import { getCurrentProfile, deleteAccount } from '../../actions/profileActions';
+     ...
+     ...
+     //function to delete account
+     onDeleteClick(event) {
+       this.props.deleteAccount();
+     }
+     ...
+     ...
+     ...
+     export default connect(
+     mapStateToProps,
+     { getCurrentProfile, deleteAccount }
+   )(Dashboard);
+   ```
+
+8. we now want to update the `propTypes`
+
+   ```react
+   Dashboard.propTypes = {
+     getCurrentProfile: PropTypes.func.isRequired,
+     deleteAccount: PropTypes.func.isRequired,
+     auth: PropTypes.object.isRequired,
+     profile: PropTypes.object.isRequired
+   };
+   ```
+
+9. bring this into `actions/profileActions.js`
+
+   ```react
+   //NOTE: dispatch is used for AXIOS requests
+   export const deleteAccount = () => dispatch => {
+     if (window.confirm('Are you sure? This action CANNOT be undone.')) {
+       axios
+         .delete('/api/profile')
+         .then(res =>
+           dispatch({
+             type: SET_CURRENT_USER,
+             payload: {}
+           })
+         )
+         .catch(err =>
+           dispatch({
+             type: GET_ERRORS,
+             payload: err.response.data
+           })
+         );
+     }
+   };
+   ```
+
+10. the workflow goes:
+
+    1. axios request gets received in `profileActions.js`
+    2. the default export in `authReducer.js` lets you actually check for authentication

@@ -7,6 +7,9 @@ import TextFieldGroup from '../common/TextFieldGroup';
 import TextAreaFieldGroup from '../common/TextAreaFieldGroup';
 import SelectListGroup from '../common/SelectListGroup';
 import InputGroup from '../common/InputGroup';
+//Create profile function
+import { createProfile } from '../../actions/profileActions';
+import { withRouter } from 'react-router-dom';
 
 class CreateProfile extends Component {
   //Step 1: create the component state values (the fields)
@@ -36,6 +39,14 @@ class CreateProfile extends Component {
     this.onSubmit = this.onSubmit.bind(this);
   }
 
+  //For Create Profile from profileActions
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.errors) {
+      //fills the state with the error
+      this.setState({ errors: nextProps.errors });
+    }
+  }
+
   //53:3 set up functions for the on-commands
   onChange(event) {
     this.setState({ [event.target.name]: event.target.value });
@@ -43,7 +54,25 @@ class CreateProfile extends Component {
 
   onSubmit(event) {
     event.preventDefault();
-    console.log('submit');
+    //we need to get all our form fields
+    const profileData = {
+      handle: this.state.handle,
+      company: this.state.company,
+      website: this.state.website,
+      location: this.state.location,
+      status: this.state.status,
+      skills: this.state.skills,
+      githubusername: this.state.githubusername,
+      bio: this.state.bio,
+      twitter: this.state.twitter,
+      facebook: this.state.facebook,
+      linkedin: this.state.linkedin,
+      youtube: this.state.youtube,
+      instagram: this.state.instagram
+    };
+
+    //redux actions are in props
+    this.props.createProfile(profileData, this.props.history);
   }
 
   //Step 5: Create the inside of the form
@@ -192,6 +221,7 @@ class CreateProfile extends Component {
 
                 <div className="mb-3">
                   <button
+                    type="button"
                     onClick={() => {
                       this.setState(prevState => ({
                         displaySocialInputs: !prevState.displaySocialInputs
@@ -228,4 +258,7 @@ const mapStateToProps = state => ({
   profile: state.profile,
   errors: state.errors
 });
-export default connect(mapStateToProps)(CreateProfile);
+export default connect(
+  mapStateToProps,
+  { createProfile }
+)(withRouter(CreateProfile));

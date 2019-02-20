@@ -5150,3 +5150,110 @@ We need to display the profile now
 
     1. axios request gets received in `profileActions.js`
     2. the default export in `authReducer.js` lets you actually check for authentication
+
+
+
+### Edit Profile Component
+
+we want to now be able to edit the profile
+
+1. `components/edit-profile/EditProfile.js`
+
+   1. in `App.js`import `getCurrentProfile` and add a lifecycle method `getCurrentProfile`
+
+   ```react
+   import { createProfile, getCurrentProfile } from '../../actions/profileActions';
+   ...
+   ...
+   ...
+     componentDidMount() {
+         this.props.getCurrentProfile();
+     }
+     ...
+     ...
+     export default connect(
+     mapStateToProps,
+     { createProfile, getCurrentProfile }
+   )(withRouter(CreateProfile));
+   ```
+
+2. edit `componentWillReceiveProps` and import `isEmpty` to use inside it
+
+   ```react
+   //For Create Profile from profileActions
+     componentWillReceiveProps(nextProps) {
+       if (nextProps.errors) {
+         //fills the state with the error
+         this.setState({ errors: nextProps.errors });
+       }
+       //We want to see if this profile has come in from the state because we want to fill the component fields with those values
+       if (nextProps.profile.profile) {
+         const profile = nextProps.profile.profile;
+         //if the user doesn't have option fields filled in, we need to make it an empty string
+         //so import isEmpty function
+         //we want to make the skills array into a CSV
+         //takes array and splits each value by a comma
+         const skillsCSV = profile.skills.join(',');
+   
+         //if profile field doens't exist, make empty string
+         profile.company = !isEmpty(profile.company) ? profile.company : '';
+         profile.website = !isEmpty(profile.website) ? profile.website : '';
+         profile.location = !isEmpty(profile.location) ? profile.location : '';
+         profile.githubusername = !isEmpty(profile.githubusername)
+           ? profile.githubusername
+           : '';
+         profile.bio = !isEmpty(profile.bio) ? profile.bio : '';
+         profile.social = !isEmpty(profile.social) ? profile.social : {};
+         profile.twitter = !isEmpty(profile.social.twitter)
+           ? profile.social.twitter
+           : '';
+         profile.facebook = !isEmpty(profile.social.facebook)
+           ? profile.social.facebook
+           : '';
+         profile.linkedin = !isEmpty(profile.social.linkedin)
+           ? profile.social.linkedin
+           : '';
+         profile.youtube = !isEmpty(profile.social.youtube)
+           ? profile.social.youtube
+           : '';
+         profile.instagram = !isEmpty(profile.social.instagram)
+           ? profile.social.instagram
+           : '';
+   
+         //Set component fields state
+         this.setState({
+           handle: profile.handle,
+           company: profile.company,
+           website: profile.website,
+           location: profile.location,
+           status: profile.status,
+           githubusername: profile.githubusername,
+           bio: profile.bio,
+           twitter: profile.company,
+           facebook: profile.facebook,
+           linkedin: profile.linkedin,
+           youtube: profile.youtube,
+           skills: skillsCSV
+         });
+       }
+     }
+   ```
+
+3. let's add a dashboard link in `Navbar.js`
+
+   ```react
+   render() {
+       const { isAuthenticated, user } = this.props.auth;
+       const authLinks = (
+         <ul className="navbar-nav ml-auto">
+           <li className="nav-item">
+             <Link className="nav-link" to="/dashboard">
+               Dashboard
+             </Link>
+           </li>
+           ...
+           ...
+           ...
+   ```
+
+4. 

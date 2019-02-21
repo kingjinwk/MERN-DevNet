@@ -5256,4 +5256,498 @@ we want to now be able to edit the profile
            ...
    ```
 
-4. 
+
+
+### Adding Experiences and Education from Dashboard
+
+1. create `components/add-credentials/AddExperience.js` and `components/add-credentials/AddEducation.js`
+
+   - in `AddExperience`
+
+   ```react
+   import React, { Component } from 'react';
+   //bring in the redux state we need withROuter to redirect from an action
+   import { Link, withRouter } from 'react-router-dom';
+   import TextFieldGroup from '../common/TextFieldGroup';
+   import TextAreaFieldGroup from '../common/TextAreaFieldGroup';
+   //we need the connect import for containers
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   
+   class AddExperience extends Component {
+     constructor(props) {
+       super(props);
+       this.state = {
+         company: '',
+         title: '',
+         location: '',
+         from: '',
+         to: '',
+         current: false,
+         description: '',
+         errors: {},
+         disabled: false
+       };
+     }
+   
+     render() {
+       //FUnFACT: Destructuring is an ES6 standard
+       const { errors } = this.state;
+   
+       return;
+       <div className="add-experience">
+         <div className="container">
+           <div className="row">
+             <div className="div col-md-8 m-auto">
+               <Link to="dashboard" className="btn btn-light">
+                 Go Back
+               </Link>
+               <h1 className="hisplay-4 text-center">Add Experience</h1>
+               <p className="lead text-center">Add any job or position you had</p>
+               <small className="d-block pb-3">* = required fields</small>
+             </div>
+           </div>
+         </div>
+       </div>;
+     }
+   }
+   AddExperience.propTypes = {
+     profile: PropTypes.object.isRequired,
+     errors: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     profile: state.profile,
+     errors: state.errors
+   });
+   
+   export default connect(mapStateToProps)(withRouter(AddExperience));
+   ```
+
+   - import this into our router in `App.js`
+
+     ```react
+     import AddExperience from './components/add-credentials/AddExperience';
+     
+     ...
+     ...
+     ...
+     
+                   <Switch>
+                     <PrivateRoute
+                       exact
+                       path="/add-experience"
+                       component={AddExperience}
+                     />
+                   </Switch>
+     ```
+
+2. We want to create the actual fields now, so in `AddExperience` under the latest `small` tag:
+
+   ```react
+   <form onSubmit={this.onSubmit}>
+                   <TextFieldGroup
+                     placeholder="* Company"
+                     name="company"
+                     value={this.state.company}
+                     onChange={this.onChange}
+                     error={errors.company}
+                   />
+                   <TextFieldGroup
+                     placeholder="* Job Title"
+                     name="title"
+                     value={this.state.title}
+                     onChange={this.onChange}
+                     error={errors.title}
+                   />
+                   <TextFieldGroup
+                     placeholder="* Location"
+                     name="location"
+                     value={this.state.location}
+                     onChange={this.onChange}
+                     error={errors.location}
+                   />
+                   <h6>From Date</h6>
+                   <TextFieldGroup
+                     name="from"
+                     type="date"
+                     value={this.state.from}
+                     onChange={this.onChange}
+                     error={errors.from}
+                   />
+                   <h6>To Date</h6>
+                   <TextFieldGroup
+                     name="to"
+                     type="date"
+                     value={this.state.to}
+                     onChange={this.onChange}
+                     error={errors.to}
+                     disabled={this.state.disabled ? 'disabled' : ''}
+                   />
+                   <div className="form-check mb-4">
+                     <input
+                       type="checkbox"
+                       className="form-check-input"
+                       name="current"
+                       value={this.state.current}
+                       checked={this.state.current}
+                       onChange={this.onCheck}
+                       id="current"
+                     />
+                     <label htmlFor="current" className="form-check-label">
+                       Current Job
+                     </label>
+                   </div>
+                   <TextAreaFieldGroup
+                     placeholder="Job Description"
+                     name="description"
+                     value={this.state.description}
+                     onChange={this.onChange}
+                     error={errors.description}
+                     info="Tell us about the position"
+                   />
+                   <input
+                     type="submit"
+                     value="Submit"
+                     className="btn btn-info btn-block mt-4"
+                   />
+                 </form>
+   ```
+
+3. we want the Current Job portion to click, so create `onChange` and `onSubmit`
+
+   ```javascript
+   class AddExperience extends Component {
+     constructor(props) {
+       super(props);
+       this.state = {
+         company: '',
+         title: '',
+         location: '',
+         from: '',
+         to: '',
+         current: false,
+         description: '',
+         errors: {},
+         disabled: false
+       };
+   
+       this.onChange = this.onChange.bind(this);
+       this.onSubmit = this.onSubmit.bind(this);
+       this.onCheck = this.onCheck.bind(this);
+     }
+   
+     onSubmit(event) {
+       event.preventDefault();
+       console.log('submit');
+     }
+   
+     onChange(event) {
+       this.setState({ [event.target.name]: event.target.value });
+     }
+   
+     onCheck(event) {
+       //we want to change the disabled state and set current to whatever it is
+       this.setState({
+         disabled: !this.state.disabled,
+         current: !this.state.current
+       });
+     }
+   ```
+
+
+
+### Create Add Experience Functionality
+
+1. in `AddExperience`
+
+   ```react
+   //the addExperience action
+   import { addExperience } from '../../actions/profileActions';
+   
+   ...
+   ...
+   ...
+   
+   AddExperience.propTypes = {
+     addExperience: PropTypes.func.isRequired,
+     profile: PropTypes.object.isRequired,
+     errors: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     profile: state.profile,
+     errors: state.errors
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { addExperience }
+   )(withRouter(AddExperience));
+   ```
+
+2. change `onSubmit`, because this is when we want things to happen
+
+   ```react
+    onSubmit(event) {
+       event.preventDefault();
+   
+       const expData = {
+         company: this.state.company,
+         title: this.state.title,
+         location: this.state.location,
+         from: this.state.from,
+         to: this.state.to,
+         current: this.state.current,
+         description: this.state.description
+       };
+   
+       //we can use history because we brought in withRouter
+       this.props.addExperience(expData, this.props.history);
+     }
+   ```
+
+3. and now in `actions/profileActions`, create `addExperience` function
+
+   ```react
+   //Add Experience
+   export const addExperience = (expData, history) => dispatch => {
+     axios
+       .post('/api/profile/experience', expData)
+       .then(res => history.push('/dashboard'))
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.response.data
+         })
+       );
+   };
+   ```
+
+4. **NOTE: WE CANNOT FORGET `componentWillReceiveProps`**, or we will get a bad request
+
+   ```react
+   componentWillReceiveProps(nextProps) {
+       if (nextProps.errors) {
+         this.setState({ errors: nextProps.errors });
+       }
+     }
+   ```
+
+
+
+
+
+### Add Education Form & Functionality
+
+1. in `components/add-credentials/AddEducation`
+
+   ```react
+   import React, { Component } from 'react';
+   //bring in the redux state we need withROuter to redirect from an action
+   import { Link, withRouter } from 'react-router-dom';
+   import TextFieldGroup from '../common/TextFieldGroup';
+   import TextAreaFieldGroup from '../common/TextAreaFieldGroup';
+   //we need the connect import for containers
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   //the addEducation action
+   import { addEducation } from '../../actions/profileActions';
+   
+   class AddEducation extends Component {
+     constructor(props) {
+       super(props);
+       this.state = {
+         school: '',
+         degree: '',
+         fieldofstudy: '',
+         from: '',
+         to: '',
+         current: false,
+         description: '',
+         errors: {},
+         disabled: false
+       };
+   
+       this.onChange = this.onChange.bind(this);
+       this.onSubmit = this.onSubmit.bind(this);
+       this.onCheck = this.onCheck.bind(this);
+     }
+   
+     componentWillReceiveProps(nextProps) {
+       if (nextProps.errors) {
+         this.setState({ errors: nextProps.errors });
+       }
+     }
+   
+     onSubmit(event) {
+       event.preventDefault();
+   
+       const eduData = {
+         school: this.state.school,
+         degree: this.state.degree,
+         fieldofstudy: this.state.fieldofstudy,
+         from: this.state.from,
+         to: this.state.to,
+         current: this.state.current,
+         description: this.state.description
+       };
+   
+       //we can use history because we brought in withRouter
+       this.props.addEducation(eduData, this.props.history);
+     }
+   
+     onChange(event) {
+       this.setState({ [event.target.name]: event.target.value });
+     }
+   
+     onCheck(event) {
+       //we want to change the disabled state and set current to whatever it is
+       this.setState({
+         disabled: !this.state.disabled,
+         current: !this.state.current
+       });
+     }
+   
+     render() {
+       //FUnFACT: Destructuring is an ES6 standard
+       const { errors } = this.state;
+   
+       return (
+         <div className="add-education">
+           <div className="container">
+             <div className="row">
+               <div className="div col-md-8 m-auto">
+                 <Link to="dashboard" className="btn btn-light">
+                   Go Back
+                 </Link>
+                 <h1 className="hisplay-4 text-center">Add Education</h1>
+                 <p className="lead text-center">Add any school, bootcamp etc.</p>
+                 <small className="d-block pb-3">* = required fields</small>
+                 <form onSubmit={this.onSubmit}>
+                   <TextFieldGroup
+                     placeholder="* School"
+                     name="school"
+                     value={this.state.school}
+                     onChange={this.onChange}
+                     error={errors.school}
+                   />
+                   <TextFieldGroup
+                     placeholder="* Degree or Certification"
+                     name="degree"
+                     value={this.state.degree}
+                     onChange={this.onChange}
+                     error={errors.degree}
+                   />
+                   <TextFieldGroup
+                     placeholder="* Field of Study"
+                     name="fieldofstudy"
+                     value={this.state.fieldofstudy}
+                     onChange={this.onChange}
+                     error={errors.fieldofstudy}
+                   />
+                   <h6>From Date</h6>
+                   <TextFieldGroup
+                     name="from"
+                     type="date"
+                     value={this.state.from}
+                     onChange={this.onChange}
+                     error={errors.from}
+                   />
+                   <h6>To Date</h6>
+                   <TextFieldGroup
+                     name="to"
+                     type="date"
+                     value={this.state.to}
+                     onChange={this.onChange}
+                     error={errors.to}
+                     disabled={this.state.disabled ? 'disabled' : ''}
+                   />
+                   <div className="form-check mb-4">
+                     <input
+                       type="checkbox"
+                       className="form-check-input"
+                       name="current"
+                       value={this.state.current}
+                       checked={this.state.current}
+                       onChange={this.onCheck}
+                       id="current"
+                     />
+                     <label htmlFor="current" className="form-check-label">
+                       Currently Attending
+                     </label>
+                   </div>
+                   <TextAreaFieldGroup
+                     placeholder="Program Description"
+                     name="description"
+                     value={this.state.description}
+                     onChange={this.onChange}
+                     error={errors.description}
+                     info="Tell us about the program that you were in"
+                   />
+                   <input
+                     type="submit"
+                     value="Submit"
+                     className="btn btn-info btn-block mt-4"
+                   />
+                 </form>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   AddEducation.propTypes = {
+     addEducation: PropTypes.func.isRequired,
+     profile: PropTypes.object.isRequired,
+     errors: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     profile: state.profile,
+     errors: state.errors
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { addEducation }
+   )(withRouter(AddEducation));
+   
+   ```
+
+2. create the `addEducation` action in `profileActions`
+
+   ```react
+   //Add Education
+   export const addEducation = (eduData, history) => dispatch => {
+     axios
+       .post('/api/profile/education', eduData)
+       .then(res => history.push('/dashboard'))
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.response.data
+         })
+       );
+   };
+   ```
+
+3. now we want to bring this route into `App.js`
+
+   ```react
+   import AddEducation from './components/add-credentials/AddEducation';  
+   
+   			<Switch>
+                   <PrivateRoute
+                     exact
+                     path="/add-education"
+                     component={AddEducation}
+                   />
+                 </Switch>
+   ```
+
+4. we are all done now!
+
+
+

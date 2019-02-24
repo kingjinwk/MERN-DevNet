@@ -9,7 +9,7 @@ import SelectListGroup from '../common/SelectListGroup';
 import InputGroup from '../common/InputGroup';
 //Create profile function
 import { createProfile, getCurrentProfile } from '../../actions/profileActions';
-import { withRouter } from 'react-router-dom';
+import { withRouter, Link } from 'react-router-dom';
 import isEmpty from '../../validation/is-empty';
 
 class CreateProfile extends Component {
@@ -202,6 +202,10 @@ class CreateProfile extends Component {
         <div className="container">
           <div className="row">
             <div className="col-md-8 m-auto">
+              {/* Added link to go back to dashboard */}
+              <Link to="dashboard" className="btn btn-light">
+                Go Back
+              </Link>
               <h1 className="display-4 text-center">Create Your Profile </h1>
               <p className="p lead text-center">
                 We need some info to make your profile stand out:

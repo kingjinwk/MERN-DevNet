@@ -5946,4 +5946,156 @@ we want to now be able to edit the profile
 
 We want to delete education now
 
-1. 
+1. copy over `Experience` as a template into the new `dashboard/Education` file
+
+   ```react
+   import React, { Component } from 'react';
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   import { withRouter } from 'react-router-dom';
+   //importing react-moment to format experience date
+   import Moment from 'react-moment';
+   //to delete experience
+   import { deleteEducation } from '../../actions/profileActions';
+   
+   class Education extends Component {
+     onDeleteClick(id) {
+       this.props.deleteEducation(id);
+     }
+   
+     render() {
+       const education = this.props.education.map(edu => (
+         <tr key={edu._id}>
+           <td>{edu.school}</td>
+           <td>{edu.degree}</td>
+           <td>
+             <Moment format="YYYY/MM/DD">{edu.from}</Moment> -
+             {edu.to === null ? (
+               ' Current'
+             ) : (
+               <Moment format="YYYY/MM/DD">{edu.to}</Moment>
+             )}
+           </td>
+           <td>
+             <button
+               onClick={this.onDeleteClick.bind(this, edu._id)}
+               className="btn btn-danger"
+             >
+               Delete
+             </button>
+           </td>
+         </tr>
+       ));
+   
+       return (
+         <div>
+           <h4 className="mb-4">Education Credentials</h4>
+           <table className="table">
+             <thead>
+               <tr>
+                 <th>School</th>
+                 <th>Degree</th>
+                 <th>Years</th>
+                 <th />
+               </tr>
+               {education}
+             </thead>
+           </table>
+         </div>
+       );
+     }
+   }
+   
+   Education.propTypes = {
+     deleteEducation: PropTypes.func.isRequired
+   };
+   
+   export default connect(
+     null,
+     { deleteEducation }
+   )(withRouter(Education));
+   
+   ```
+
+2. go back to `Dashboard.js`, import the Education file, and add the route
+
+   ```react
+   ...
+   ...
+   import Education from './Education';
+   ...
+   ...
+   ...
+   dashboardContent = (
+             <div>
+               <p className="lead text-muted">
+                 Welcome <Link to={`/profile/${profile.handle}`}>{user.name}</Link>
+               </p>
+               <ProfileActions />
+               <Experience experience={profile.experience} />
+               <Education education={profile.education} />
+               <div style={{ marginBottom: '60px' }} />
+               <button
+                 onClick={this.onDeleteClick.bind(this)}
+                 className="btn btn-danger"
+               >
+                 Delete My Account
+               </button>
+             </div>
+           );
+   ```
+
+3. create `deleteEducation` function
+
+   ```react
+   //Delete Education
+   export const deleteEducation = id => dispatch => {
+     axios
+       .delete(`/api/profile/experience/${id}`)
+       .then(res =>
+         dispatch({
+           type: GET_PROFILE,
+           payload: res.data
+         })
+       )
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.response.data
+         })
+       );
+   };
+   ```
+
+4. Sweet, this all works now!
+
+5. Let's add a quick **Go Back** button on the *Add* pages for convenience:
+
+   - in `EditProfile.js` import `Link` and add a button before the top margin
+
+     ```react
+     import { withRouter, Link } from 'react-router-dom';
+     ...
+     ...
+     ...
+     <div className="create-profile">
+             <div className="container">
+               <div className="row">
+                 <div className="col-md-8 m-auto">
+                   {/* Added link to go back to dashboard */}
+                   <Link to="dashboard" className="btn btn-light">
+                     Go Back
+                   </Link>
+                   ...
+                  ...
+                 ..
+                ..
+              ...
+             
+     ```
+
+6. Now there's a go-back button as well
+
+### Profile Display
+
+We want to build the display components of our profile

@@ -9,6 +9,8 @@ import Spinner from '../common/Spinner';
 import { Link } from 'react-router-dom';
 //Import ProfileActions for dashboard profile content
 import ProfileActions from './ProfileActions';
+//import experience for dashboard experience content
+import Experience from './Experience';
 
 class Dashboard extends Component {
   //ajax request to call this right away
@@ -43,7 +45,7 @@ class Dashboard extends Component {
               Welcome <Link to={`/profile/${profile.handle}`}>{user.name}</Link>
             </p>
             <ProfileActions />
-            {/* TODO: exp and education */}
+            <Experience experience={profile.experience} />
             <div style={{ marginBottom: '60px' }} />
             <button
               onClick={this.onDeleteClick.bind(this)}

@@ -5747,7 +5747,203 @@ we want to now be able to edit the profile
                  </Switch>
    ```
 
-4. we are all done now!
+4. Add education and experience works perfectly now~
 
 
 
+### Dashboard: Display & Delete Experience
+
+1. in `dashboard/Dashboard.js` import
+
+   ```react
+   //import experience for dashboard experience content
+   import Experience from './Experience';
+   
+   dashboardContent = (
+             <div>
+               <p className="lead text-muted">
+                 Welcome <Link to={`/profile/${profile.handle}`}>{user.name}</Link>
+               </p>
+               <ProfileActions />
+               <Experience experience={profile.experience} />
+               <div style={{ marginBottom: '60px' }} />
+               <button
+                 onClick={this.onDeleteClick.bind(this)}
+                 className="btn btn-danger"
+               >
+                 Delete My Account
+               </button>
+             </div>
+           );
+   ```
+
+2. create `Experience.js` 
+
+   ```react
+   import React, { Component } from 'react';
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   import { withRouter } from 'react-router-dom';
+   
+   class Experience extends Component {
+     render() {
+       const experience = this.props.experience.map(exp => (
+         <tr key={exp._id}>
+           <td>{exp.company}</td>
+           <td>{exp.title}</td>
+           <td>
+             {exp.to} - {exp.to}
+           </td>
+           <td>
+             <button className="btn btn-danger">Delete</button>
+           </td>
+         </tr>
+       ));
+   
+       return (
+         <div>
+           <h4 className="mb-4">Experience Credentials</h4>
+           <table className="table">
+             <thead>
+               <tr>
+                 <th>Company</th>
+                 <th>Title</th>
+                 <th>Years</th>
+                 <th />
+               </tr>
+               <tbody>{experience}</tbody>
+             </thead>
+           </table>
+         </div>
+       );
+     }
+   }
+   
+   export default connect(null)(withRouter(Experience));
+   ```
+
+3. This is all cool, but we want the date to be formatted better: so we are going to use `react moment`
+
+4. install it in `client` directory:  `npm install react-moment` and `npm install moment`
+
+5. go in `Experience.js` and import this
+
+   ```react
+   ...
+   ...
+   //importing react-moment to format experience date
+   import Moment from 'react-moment';
+   
+   class Experience extends Component {
+     render() {
+       const experience = this.props.experience.map(exp => (
+         <tr key={exp._id}>
+           <td>{exp.company}</td>
+           <td>{exp.title}</td>
+           <td>
+             <Moment format="YYYY/MM/DD">{exp.from}</Moment> -
+             <Moment format="YYYY/MM/DD">{exp.to}</Moment>
+           </td>
+           <td>
+             <button className="btn btn-danger">Delete</button>
+           </td>
+         </tr>
+       ));
+   ...
+   ...
+   ...
+   ```
+
+6. one problem we have is that the **Current Job** tick is recognized as an invalid date, so:
+
+   ```react
+   ...
+   ...
+           <td>
+             <Moment format="YYYY/MM/DD">{exp.from}</Moment> -
+             {exp.to === null ? (
+               'Current'
+             ) : (
+               <Moment format="YYYY/MM/DD">{exp.to}</Moment>
+             )}
+           </td>
+    ...
+    ...
+   ```
+
+7. we want to be able to delete experiences from the dashboard:
+
+   - import `deleteExperience` which we will create soon
+
+   - create PropTypes for deleteExperience
+
+   - change the button to do something `onClick`
+
+   - we create `onDeleteClick`
+
+     ```react
+     ...
+     ...
+     import { deleteExperience } from '../../actions/profileActions';
+     
+     class Experience extends Component {
+         onDeleteClick(id) {
+             this.props.deleteExperience(id);
+         }
+     
+       render() {
+         const experience = this.props.experience.map(exp => (
+           <tr key={exp._id}>
+             ...
+             ...
+               <button onClick={this.onDeleteClick.bind(this, exp._id)} className="btn btn-danger">Delete</button>
+             </td>
+           </tr>
+         ));
+     
+     ...
+     ...
+     ...
+     
+     Experience.propTypes = {
+       deleteExperience: PropTypes.func.isRequired
+     };
+     
+     export default connect(
+       null,
+       { deleteExperience }
+     )(withRouter(Experience));
+     
+     ```
+
+8. create `deleteExperience` in `actions/profileAction.js`
+
+   ```javascript
+   //Delete Experience
+   export const deleteExperience = id => dispatch => {
+     axios
+       .delete(`/api/profile/experience/${id}`)
+       .then(res =>
+         dispatch({
+           type: GET_PROFILE,
+           payload: res.data
+         })
+       )
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.response.data
+         })
+       );
+   };
+   ```
+
+9. We can now delete experiences
+
+
+
+### Dashboard: Education Display & Delete
+
+We want to delete education now
+
+1. 

@@ -6099,3 +6099,279 @@ We want to delete education now
 ### Profile Display
 
 We want to build the display components of our profile
+
+1. create `components/profiles/Profiles.js` and `ProfileItem.js` which turns each component into a list
+
+2. in `Profiles.js`:
+
+   ```react
+   import React, { Component } from 'react';
+   //for redux stuff
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   import Spinner from '../common/Spinner';
+   //for fetching profiles
+   import { getProfiles } from '../../actions/profileActions';
+   
+   class Profiles extends Component {
+     //as soon as component mounts, get profile
+     componentDidMount() {
+       this.props.getProfiles();
+     }
+   
+     render() {
+       const { profiles, loading } = this.props.profile;
+       let profileItems;
+   
+       //test to see if profile is loading
+       if (profiles === null || loading) {
+         profileItems = <Spinner />;
+           } else {
+         if (profiles.length > 0) {
+           profileItems = <h1>PROFILES HERE</h1>;
+         } else {
+           profileItems = <h4>No Profiles Found</h4>;
+         }
+       }
+       return (
+         <div className="profiles">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-12">
+                 <h1 className="display-4 text-center">Developer Profiles</h1>
+                 <p className="lead text-center">
+                   Browse and connect with other developers
+                 </p>
+                 {profileItems}
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   Profiles.propTypes = {
+     getProfiles: PropTypes.func.isRequired,
+     profile: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     profile: state.profile
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { getProfiles }
+   )(Profiles);
+   ```
+
+3. and then we want to bring in this as a route to `App.js` **NOTE: we use a regular `Route` because we want this to be a public route**
+
+   ```react
+   import Profiles from './components/profiles/Profiles'
+   ...
+   ...
+   ...
+   class App extends Component {
+     render() {
+       return (
+         <Provider store={store}>
+           <Router>
+             <div className="App">
+               <Navbar />
+               <Route exact path="/" component={Landing} />
+               <div className="container">
+                 <Route exact path="/register" component={Register} />
+                 <Route exact path="/login" component={Login} />
+                 <Route exact path="/profiles" component={Profiles} />
+   ```
+
+4. let's create `getProfile` in `actions/profileActions`
+
+   ```react
+   ...
+   import {
+     GET_PROFILE,
+     GET_PROFILES,
+     PROFILE_LOADING,
+     CLEAR_CURRENT_PROFILE,
+     GET_ERRORS,
+     SET_CURRENT_USER
+   } from './types';
+   
+   // Get All Profiles
+   export const getProfiles = () => dispatch => {
+     dispatch(setProfileLoading());
+     axios
+       .delete('/api/profile/all')
+       .then(res =>
+         dispatch({
+           type: GET_PROFILE,
+           payload: res.data
+         })
+       )
+       .catch(err =>
+         dispatch({
+           type: GET_PROFILES,
+           payload: null
+         })
+       );
+   };
+   ...
+   ```
+
+5. go to `profileReducer`  and add a case for `GET_PROFILES`
+
+   ```react
+   export default function(state = initialState, action) {
+     switch (action.type) {
+       case PROFILE_LOADING:
+         return {
+           ...state,
+           loading: true
+         };
+       case GET_PROFILE:
+         return {
+           ...state,
+           profile: action.payload,
+           loading: false
+         };
+       case GET_PROFILES:
+         return {
+           ...state,
+           profiles: action.payload,
+           loading: false
+         };
+   ```
+
+
+
+### Profile Items
+
+We want to create items for the profile to display
+
+1. in `ProfileItem.js` we create a new react component
+
+   ```react
+   import React, { Component } from 'react'
+   import PropTypes from 'prop-types'
+   import { Link } from 'react-router-dom'
+   import isEmpty from '../../validation/is-empty'
+   
+   
+   class ProfileItem extends Component {
+     render() {
+   
+       const { profile} = this.props;
+   
+       return (
+         <div className='card card-body bg-light mb-3'>
+           <div className='row'>
+               <div className="col-2">
+                   <img src={profile.user.avatar} alt="" className="rounded-circle"/>
+               </div>
+           </div>
+         </div>
+       )
+     }
+   }
+   
+   export default ProfileItem
+   ```
+
+2. ```react
+   import React, { Component } from 'react';
+   //for redux stuff
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   import Spinner from '../common/Spinner';
+   //for fetching profiles
+   import { getProfiles } from '../../actions/profileActions';
+   
+   class Profiles extends Component {
+     //as soon as component mounts, get profile
+     componentDidMount() {
+       this.props.getProfiles();
+     }
+   
+     render() {
+       const { profiles, loading } = this.props.profile;
+       let profileItems;
+       //test to see if profile is loading
+       if (profiles === null || loading) {
+         profileItems = <Spinner />;
+       } else {
+         if (profiles.length > 0) {
+           profileItems = <h1>PROFILES HERE</h1>;
+         } else {
+           profileItems = <h4>No Profiles Found</h4>;
+         }
+       }
+       return (
+         <div className="profiles">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-12">
+                 <h1 className="display-4 text-center">Developer Profiles</h1>
+                 <p className="lead text-center">
+                   Browse and connect with other developers
+                 </p>
+                 {profileItems}
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   Profiles.propTypes = {
+     getProfiles: PropTypes.func.isRequired,
+     profile: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     profile: state.profile
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { getProfiles }
+   )(Profiles);
+   
+   ```
+
+3. we want to import this into `Profiles.js` and replace the placeholders with the actual profile items
+
+   ```react
+   import ProfileItem from './ProfileItem'
+   ...
+   ...
+   ...
+     render() {
+       const { profiles, loading } = this.props.profile;
+       let profileItems;
+       //test to see if profile is loading
+       if (profiles === null || loading) {
+         profileItems = <Spinner />;
+       } else {
+         if (profiles.length > 0) {
+           profileItems = profiles.map(profile => (
+             <ProfileItem key={profile._id} profile={profile} />
+           ));
+         } else {
+           profileItems = <h4>No Profiles Found</h4>;
+         }
+       }
+   ```
+
+4. Now our 'All Profiles' button works perfectly, we need to make Each Profile work now
+
+
+
+### User Profile by Handle and Subcomponents
+
+We need each user profile to have stuff inside it
+
+1. 

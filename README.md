@@ -6374,4 +6374,572 @@ We want to create items for the profile to display
 
 We need each user profile to have stuff inside it
 
-1. 
+1. create `components/profile/Profile.js` and `ProfileHeader.js`, `ProfileAbout.js`, `ProfileGithub.js`, `ProfileCreds.js`
+
+2. Fill in all the files with a RCC placeholder, and then fill Profile.js with the necessary imports for the other Profile files
+
+   ```react
+   import React, { Component } from 'react';
+   import ProfileHeader from './ProfileHeader';
+   import ProfileAbout from './ProfileAbout';
+   import ProfileCreds from './ProfileCreds';
+   import ProfileGithub from './ProfileGithub';
+   import Spinner from '../common/Spinner';
+   //importing redux for fetching profile
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   import { Link } from 'react-router-dom';
+   import { getProfileByHandle } from '../../actions/profileActions';
+   
+   class Profile extends Component {
+     componentDidMount() {
+       if (this.props.match.params.handle) {
+         this.props.getProfileByHandle(this.props.match.params.handle);
+       }
+     }
+   
+     render() {
+       return (
+         <div>
+           <h1>TODO: Profile Creds</h1>
+         </div>
+       );
+     }
+   }
+   
+   Profile.propTypes = {
+     profile: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     profile: state.profile
+   });
+   
+   export default connect(mapStateToProps)(Profile);
+   ```
+
+3. make sure to import `Profile` into `App.js` and create a public route to profiles
+
+   ```react
+   import Profile from './componenets/profile/Profile';
+   ...
+   ...
+   ...
+   class App extends Component {
+     render() {
+       return (
+         <Provider store={store}>
+           <Router>
+             <div className="App">
+               <Navbar />
+               <Route exact path="/" component={Landing} />
+               <div className="container">
+                 <Route exact path="/register" component={Register} />
+                 <Route exact path="/login" component={Login} />
+                 <Route exact path="/profiles" component={Profiles} />
+   ```
+
+   
+
+4. we now want to create the actual action to grab a profile by the handle in `profileActions`
+
+   ```react
+   // Get profile by handle
+   export const getProfileByHandle = handle => dispatch => {
+     //setprofileloading to set the profile to be loading before the actual request
+     dispatch(setProfileLoading());
+     //get current user profile
+     axios
+       .get(`/api/profile/handle/${handle}`)
+       .then(res =>
+         dispatch({
+           type: GET_PROFILE,
+           payload: res.data
+         })
+       )
+       //If there isn't a profile, just return an empty profile and a button to create one, instead of errors
+       .catch(err =>
+         dispatch({
+           type: GET_PROFILE,
+           payload: null
+         })
+       );
+   };
+   ```
+
+5. go back to `Profile.js` and make sure this is imported, and declare it on the bottom for redux connect
+
+   ```react
+   import { getProfileByHandle } from '../../actions/profileActions';
+   ...
+   ...
+   ...
+   Profile.propTypes = {
+     getProfileByHandle: PropTypes.func.isRequired,
+     profile: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     profile: state.profile
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { getProfileByHandle }
+   )(Profile);
+   ```
+
+6. now in our redux states, we can see that the profile can be grabbed by the handle
+
+7. just for visual verification, we add these lines to add some header placeholders for user profiles in `Profile.js`
+
+   ```react
+   ...
+   ...
+   class Profile extends Component {
+     componentDidMount() {
+       if (this.props.match.params.handle) {
+         this.props.getProfileByHandle(this.props.match.params.handle);
+       }
+     }
+   
+     render() {
+       return (
+         <div>
+           <ProfileHeader />
+           <ProfileAbout />
+           <ProfileCreds />
+           <ProfileGithub />
+         </div>
+       );
+     }
+   }
+   ...
+   ...
+   ```
+
+
+
+### Profile Header
+
+1. we want to get rid of the placeholders in `Profile` with proper containage
+
+   ```react
+     render() {
+       const { profile, loading } = this.props.profile;
+       let profileContent;
+   
+       if (profile === null || loading) {
+         profileContent = <Spinner />;
+       } else {
+         profileContent = (
+           <div>
+             <div className="row">
+               <div className="col-md-6">
+                 <Link to="/profiles" className="btn btn-light mb-3 float-left">
+                   Back To Profiles
+                 </Link>
+               </div>
+               <div className="col-md-6" />
+             </div>
+             <ProfileHeader profile={profile} />
+             <ProfileAbout />
+             <ProfileCreds />
+             <ProfileGithub />
+           </div>
+         );
+       }
+       return (
+         <div className="profile">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-12">{profileContent}</div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   ```
+
+2. Now we want to go into `ProfileHeader` and bring these components out
+
+   ```react
+   import React, { Component } from 'react';
+   import isEmpty from '../../validation/is-empty';
+   
+   class ProfileHeader extends Component {
+     render() {
+       const { profile } = this.props;
+       return (
+         <div className="row">
+           <div className="col-md-12">
+             <div className="card card-body bg-info text-white mb-3">
+               <div className="row">
+                 <div className="col-4 col-md-3 m-auto">
+                   <img
+                     className="rounded-circle"
+                     src={profile.user.avatar}
+                     alt=""
+                   />
+                 </div>
+               </div>
+               <div className="text-center">
+                 <h1 className="display-4 text-center">{profile.user.name}</h1>
+                 <p className="lead text-center">
+                   {profile.status}
+                   {isEmpty(profile.company) ? null : (
+                     <span>at {profile.company}</span>
+                   )}
+                 </p>
+   
+                 {isEmpty(profile.location) ? null : <p>at {profile.location}</p>}
+   
+                 <p>
+                   <a className="text-white p-2" href="#">
+                     <i className="fas fa-globe fa-2x" />
+                   </a>
+                   <a className="text-white p-2" href="#">
+                     <i className="fab fa-twitter fa-2x" />
+                   </a>
+                   <a className="text-white p-2" href="#">
+                     <i className="fab fa-facebook fa-2x" />
+                   </a>
+                   <a className="text-white p-2" href="#">
+                     <i className="fab fa-linkedin fa-2x" />
+                   </a>
+                   <a className="text-white p-2" href="#">
+                     <i className="fab fa-instagram fa-2x" />
+                   </a>
+                 </p>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   export default ProfileHeader;
+   ```
+
+3. Now our profile picture and tags are there, we need to make sure the social media icons are linked before displaying this
+
+   ```react
+   ...
+   ...
+   ...
+                   {isEmpty(profile.company) ? null : (
+                     <span>at {profile.company}</span>
+                   )}
+                 </p>
+   
+                 {isEmpty(profile.location) ? null : <p>at {profile.location}</p>}
+   
+                 <p>
+                   {isEmpty(profile.website) ? null : (
+                     <a
+                       className="text-white p-2"
+                       href={profile.website}
+                       target="_blank"
+                     >
+                       <i className="fas fa-globe fa-2x" />
+                     </a>
+                   )}
+                   {isEmpty(profile.social && profile.social.twitter) ? null : (
+                     <a
+                       className="text-white p-2"
+                       href={profile.social.twitter}
+                       target="_blank"
+                     >
+                       <i className="fab fa-twitter fa-2x" />
+                     </a>
+                   )}
+                   {isEmpty(profile.social && profile.social.facebook) ? null : (
+                     <a
+                       className="text-white p-2"
+                       href={profile.social.facebook}
+                       target="_blank"
+                     >
+                       <i className="fab fa-facebook fa-2x" />
+                     </a>
+                   )}
+                   {isEmpty(profile.social && profile.social.linkedin) ? null : (
+                     <a
+                       className="text-white p-2"
+                       href={profile.social.linkedin}
+                       target="_blank"
+                     >
+                       <i className="fab fa-linkedin fa-2x" />
+                     </a>
+                   )}
+                   {isEmpty(profile.social && profile.social.youtube) ? null : (
+                     <a
+                       className="text-white p-2"
+                       href={profile.social.youtube}
+                       target="_blank"
+                     >
+                       <i className="fab fa-youtube fa-2x" />
+                     </a>
+                   )}
+                   {isEmpty(profile.social && profile.social.instagram) ? null : (
+                     <a
+                       className="text-white p-2"
+                       href={profile.social.instagram}
+                       target="_blank"
+                     >
+                       <i className="fab fa-instagram fa-2x" />
+                     </a>
+                   )}
+                 </p>
+   ...
+   ...
+   ...
+   ```
+
+4. Now our profile only shows icons for the social media features we have links for
+
+
+
+### Profile About & Credentials section
+
+1. we want to grab the profile about code from the devote_theme folder we downloaded
+
+   ```react
+   import React, { Component } from 'react';
+   import PropTypes from 'prop-types';
+   import isEmpty from '../../validation/is-empty';
+   
+   class ProfileAbout extends Component {
+     render() {
+       const { profile } = this.props;
+   
+       //Get first name
+       const firstName = profile.user.name.trim().split(' ')[0];
+   
+       //Skill List
+       const skills = profile.skills.map((skill, index) => (
+         <div key={index} className="p-3">
+           <i className="fa fa-check" /> {skill}
+         </div>
+       ));
+   
+       return (
+         <div className="row">
+           <div className="col-md-12">
+             <div className="card card-body bg-light mb-3">
+               <h3 className="text-center text-info">{firstName}'s Bio</h3>
+               <p className="lead">
+                 {isEmpty(profile.bio) ? null : <span>{profile.bio}</span>}
+               </p>
+               <hr />
+               <h3 className="text-center text-info">Skill Set</h3>
+               <div className="row">
+                 <div className="d-flex flex-wrap justify-content-center align-items-center">
+                   {skills}
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   export default ProfileAbout;
+   ```
+
+2. and make sure to plug this into `Profile.js` so the about section returns something else
+
+   ```react
+   ...
+   ...
+     render() {
+       const { profile, loading } = this.props.profile;
+       let profileContent;
+   
+       if (profile === null || loading) {
+         profileContent = <Spinner />;
+       } else {
+         profileContent = (
+           <div>
+             <div className="row">
+               <div className="col-md-6">
+                 <Link to="/profiles" className="btn btn-light mb-3 float-left">
+                   Back To Profiles
+                 </Link>
+               </div>
+               <div className="col-md-6" />
+             </div>
+             <ProfileHeader profile={profile} />
+             <ProfileAbout profile={profile} />
+             <ProfileCreds />
+             <ProfileGithub />
+           </div>
+         );
+       }
+   ...
+   ...
+   ...
+   ```
+
+3. We want credentials to work now, so go to `Profile.js` to pass in properties to `ProfileCreds`
+
+   ```react
+   <ProfileCreds education={profile.education} experience={profile.experience}/>
+   ```
+
+4. go to `ProfileCreds` and write this:
+
+   ```react
+   import React, { Component } from 'react';
+   import Moment from 'react-moment';
+   
+   class ProfileCreds extends Component {
+     render() {
+       const { experience, education } = this.props;
+   
+       const expItems = experience.map(exp => (
+         <li key={exp._id} className="list-group-item">
+           <h4>{exp.company}</h4>
+           <p>
+             <Moment format="YYYY/MM/DD">{exp.from}</Moment> -{' '}
+             {exp.to === null ? (
+               ' Now'
+             ) : (
+               <Moment format="YYYY/MM/DD">{exp.to}</Moment>
+             )}
+           </p>
+           <p>
+             <strong>Position:</strong> {exp.title}
+           </p>
+           <p>
+             {exp.location === '' ? null : (
+               <span>
+                 <strong>Location: </strong> {exp.location}
+               </span>
+             )}
+           </p>
+           <p>
+             {exp.description === '' ? null : (
+               <span>
+                 <strong>Description: </strong> {exp.description}
+               </span>
+             )}
+           </p>
+         </li>
+       ));
+   
+       return (
+         <div>
+           <h1>TODO: Profile Creds</h1>
+         </div>
+       );
+     }
+   }
+   
+   export default ProfileCreds;
+   ```
+
+5. and add parts for eduItems
+
+   ```react
+   import React, { Component } from 'react';
+   import Moment from 'react-moment';
+   
+   class ProfileCreds extends Component {
+     render() {
+       const { experience, education } = this.props;
+   
+       const expItems = experience.map(exp => (
+         <li key={exp._id} className="list-group-item">
+           <h4>{exp.company}</h4>
+           <p>
+             <Moment format="YYYY/MM/DD">{exp.from}</Moment> -
+             {exp.to === null ? (
+               ' Now'
+             ) : (
+               <Moment format="YYYY/MM/DD">{exp.to}</Moment>
+             )}
+           </p>
+           <p>
+             <strong>Position:</strong> {exp.title}
+           </p>
+           <p>
+             {exp.location === '' ? null : (
+               <span>
+                 <strong>Location: </strong> {exp.location}
+               </span>
+             )}
+           </p>
+           <p>
+             {exp.description === '' ? null : (
+               <span>
+                 <strong>Description: </strong> {exp.description}
+               </span>
+             )}
+           </p>
+         </li>
+       ));
+   
+       const eduItems = education.map(edu => (
+         <li key={edu._id} className="list-group-item">
+           <h4>{edu.school}</h4>
+           <p>
+             <Moment format="YYYY/MM/DD">{edu.from}</Moment> -{' '}
+             {edu.to === null ? (
+               ' Now'
+             ) : (
+               <Moment format="YYYY/MM/DD">{edu.to}</Moment>
+             )}
+           </p>
+           <p>
+             <strong>Degree:</strong> {edu.degree}
+           </p>
+           <p>
+             <strong>Field of Study:</strong> {edu.fieldofstudy}
+           </p>
+           <p>
+             {edu.description === '' ? null : (
+               <span>
+                 <strong>Description: </strong> {edu.description}
+               </span>
+             )}
+           </p>
+         </li>
+       ));
+   
+       return (
+         <div className="row">
+           <div className="col-md-6">
+             <h3 className="text-center text-info">Experience</h3>
+             {/* test to see if there are any experience items */}
+             {expItems.length > 0 ? (
+               <ul className="list-group">{expItems}</ul>
+             ) : (
+               <p className="text-center">No Experiences Listed</p>
+             )}
+           </div>
+           <div className="col-md-6">
+             <h3 className="text-center text-info">Education</h3>
+             {/* test to see if there are any education items */}
+             {eduItems.length > 0 ? (
+               <ul className="list-group">{eduItems}</ul>
+             ) : (
+               <p className="text-center">No Education Listed</p>
+             )}
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   export default ProfileCreds;
+   ```
+
+6. Now the Profile shows Experiences and Education listed!
+
+
+
+### Profile Github & Touch Ups
+

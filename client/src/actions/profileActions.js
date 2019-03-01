@@ -9,6 +9,28 @@ import {
   SET_CURRENT_USER
 } from './types';
 
+// Get profile by handle
+export const getProfileByHandle = handle => dispatch => {
+  //setprofileloading to set the profile to be loading before the actual request
+  dispatch(setProfileLoading());
+  //get current user profile
+  axios
+    .get(`/api/profile/handle/${handle}`)
+    .then(res =>
+      dispatch({
+        type: GET_PROFILE,
+        payload: res.data
+      })
+    )
+    //If there isn't a profile, just return an empty profile and a button to create one, instead of errors
+    .catch(err =>
+      dispatch({
+        type: GET_PROFILE,
+        payload: null
+      })
+    );
+};
+
 // Get All Profiles
 export const getProfiles = () => dispatch => {
   dispatch(setProfileLoading());

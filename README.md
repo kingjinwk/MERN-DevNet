@@ -6943,3 +6943,8 @@ We need each user profile to have stuff inside it
 
 ### Profile Github & Touch Ups
 
+We now want the functionalities for the Github function.
+
+1. we want to do a Google search for **Register a new OAuth application** and register for `localhost:3000` 
+2. we want to go to `ProfileGithub` and import 
+

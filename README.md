@@ -7152,4 +7152,219 @@ We now want the functionalities for the Github function.
 
 ### Posts: Post Form Component
 
-1.
+1. create `components/posts/Posts.js` and `PostForm.js`
+
+2. `Posts.js` is going to be the Chrome parent wrapper for our app
+
+   ```react
+   import React, { Component } from 'react'
+   import PropTypes from 'prop-types';
+   import { connect } from 'react-redux';
+   import PostForm from './PostForm';
+   import Spinner from '../common/Spinner';
+   
+   class Posts extends Component {
+     render() {
+       return (
+         <div className='feed'>
+           <div className="container">
+               <div className="row">
+               <div className="col-md-12">
+               <PostForm />
+               </div>
+               </div>
+           </div>
+         </div>
+       )
+     }
+   }
+   
+   export default Posts;
+   ```
+
+3. create a Route for this in `App.js`
+
+   ```react
+   ...
+   ...
+   import Posts from './components/posts/Posts';
+   ...
+   
+   
+   ...
+   ...
+   
+                   <PrivateRoute
+                     exact
+                     path="/feed"
+                     component={Posts}
+                   />
+                 </Switch>
+   ```
+
+4. and now we want the `Navbar` to show this, so in `Navbar.js`
+
+   ```react
+   ...
+   ...
+   ...
+   
+         <li className="nav-item">
+             <Link className="nav-link" to="/feed">
+               Post Feed
+             </Link>
+           </li>
+           
+   ...
+   ...
+   ...
+   ```
+
+5. copy paste the Post Form theme onto `PostForm.js`
+
+   ```react
+   import React, { Component } from 'react';
+   import PropTypes from 'prop-types';
+   import { connect } from 'react-redux';
+   import TextAreaFieldGroup from '../common/TextAreaFieldGroup';
+   import { addPost } from '../../actions/postActions';
+   
+   class PostForm extends Component {
+     constructor(props) {
+       super(props);
+       this.state = {
+         text: '',
+         errors: {}
+       };
+       this.onChange = this.onChange.bind(this);
+       this.onSubmit = this.onSubmit.bind(this);
+     }
+   
+     onSubmit(e) {
+       e.preventDefault();
+       const { user } = this.props.auth;
+   
+       const newPost = {
+         text: this.state.text,
+         name: user.name,
+         avatar: user.avatar
+       };
+   
+       this.props.addPost(newPost);
+   
+       //clear the text field
+       this.setState({ text: '' });
+     }
+   
+     onChange(e) {
+       this.setState({ [e.target.name]: e.target.value });
+     }
+   
+     render() {
+       const { errors } = this.state;
+   
+       return (
+         <div className="post-form mb-3">
+           <div className="card card-info">
+             <div className="card-header bg-info text-white">Say Somthing...</div>
+             <div className="card-body">
+               <form onSubmit={this.onSubmit}>
+                 <div className="form-group">
+                   <TextAreaFieldGroup
+                     placeholder="Create a post"
+                     name="text"
+                     value={this.state.text}
+                     onChange={this.onChange}
+                     error={errors.text}
+                   />
+                 </div>
+                 <button type="submit" className="btn btn-dark">
+                   Submit
+                 </button>
+               </form>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   PostForm.propTypes = {
+     addPost: PropTypes.func.isRequired,
+     auth: PropTypes.object.isRequired,
+     errors: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     errors: state.errors,
+     auth: state.auth
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { addPost }
+   )(PostForm);
+   
+   ```
+
+6. once we submit the form we want to call `addPost`
+
+   ```react
+   ...
+   ...
+   onSubmit(e) {
+       e.preventDefault();
+       const { user } = this.props.auth;
+   
+       const newPost = {
+         text: this.state.text,
+         name: user.name,
+         avatar: user.avatar
+       };
+   
+       this.props.addPost(newPost);
+   
+       //clear the text field
+       this.setState({ text: '' });
+     }
+   ...
+   ...
+   ```
+
+7. We need to go back to `PostForm` to create a `componentWillReceiveProps` function
+
+   ```react
+   
+     componentWillReceiveProps(newProps) {
+       if (newProps.errors) {
+         this.setState({ errors: newProps.errors });
+       }
+     }
+   ```
+
+8. we want to hop back in the `postReducer` so that when we add a post from the display, it adds it onto the redux console
+
+   ```react
+   import { ADD_POST } from '../actions/types';
+   
+   const initialState = {
+     posts: [],
+     post: {},
+     loading: false
+   };
+   
+   export default function(state = initialState, action) {
+     switch (action.type) {
+       case ADD_POST:
+         return {
+           ...state,
+           posts: [action.payload, ...state.posts]
+         };
+   
+       default:
+         return state;
+     }
+   }
+   ```
+
+9. 

@@ -6946,5 +6946,210 @@ We need each user profile to have stuff inside it
 We now want the functionalities for the Github function.
 
 1. we want to do a Google search for **Register a new OAuth application** and register for `localhost:3000` 
+
 2. we want to go to `ProfileGithub` and import 
 
+   ```react
+   import React, { Component } from 'react';
+   import { Link } from 'react-router-dom';
+   import PropTypes from 'prop-types';
+   
+   class ProfileGithub extends Component {
+     constructor(props) {
+       super(props);
+       this.state = {
+         clientId: '8b27b07d3b50ccb9f297',
+         clientSecret: 'f2afb15e5005e3860148091a7fb659cd838305cd',
+         count: 5,
+         sort: 'created: asc',
+         repos: []
+       };
+     }
+   
+     componentDidMount() {
+       const { username } = this.props;
+       const { count, sort, clientId, clientSecret } = this.state;
+   
+       fetch(
+         `https://api.github.com/users/${username}/repos?per_page=${count}&sort=${sort}&client_id=${clientId}&client_secret=${clientSecret}`
+       )
+         .then(res => res.json())
+         .then(data => {
+           if (this.refs.myRef && !data.message) {
+             this.setState({ repos: data });
+           }
+         })
+         .catch(err => console.log(err));
+     }
+   
+     render() {
+       const { repos } = this.state;
+       const repoItems = repos.map(repo => (
+         <div key={repo.id} className="card card-body mb-2">
+           <div className="row">
+             <div className="col-md-6">
+               <h4>
+                 <Link to={repo.html_url} className="text-info" target="_blank">
+                   {repo.name}
+                 </Link>
+               </h4>
+               <p>{repo.description}</p>
+             </div>
+             <div className="col-md-6">
+               <span className="badge badge-info mr-1">
+                 Stars: {repo.stargazers_count}
+               </span>
+               <span className="badge badge-secondary mr-1">
+                 Watchers: {repo.watchers_count}
+               </span>
+               <span className="badge badge-success">
+                 Forks: {repo.forks_count}
+               </span>
+             </div>
+           </div>
+         </div>
+       ));
+   
+       return (
+         <div ref="myRef">
+           <hr />
+           <h3 className="mb-4">Latest Github Repos</h3>
+           {repoItems}
+         </div>
+       );
+     }
+   }
+   
+   ProfileGithub.propTypes = {
+     username: PropTypes.string.isRequired
+   };
+   
+   export default ProfileGithub;
+   ```
+
+3. create a new functional component inside `components/not-found/NotFound.js`: we want for pages that cannot be found to display such a message
+
+   ```react
+   import React from 'react'
+   
+   export default function NotFound() {
+     return (
+       <div>
+         <h1 className="display-4">Page Not Found</h1>
+         <p>Sorry, this page does not exist</p>
+       </div>
+     )
+   }
+   ```
+
+4. and now we want to create a new route for this in `App.js` 
+
+   ```react
+   import NotFound from './components/not-found/NotFound';
+   ...
+   ...
+   ...
+                 <Switch>
+                   <PrivateRoute
+                     exact
+                     path="/add-education"
+                     component={AddEducation}
+                   />
+                 </Switch>
+                 <Route exact path="/not-found" component={NotFound} />
+               </div>
+               <Footer />
+   ...
+   ...
+   ```
+
+5. create a new lifecycle method in `Profile.js` for `componentWillReceiveProps`
+
+   ```react
+     componentWillReceiveProps(nextProps) {
+       if (nextProps.profile.profile === null && this.props.profile.loading) {
+         this.props.history.push('/not-found');
+       }
+     }
+   ```
+
+
+
+### Posts: State & addPost Action
+
+1. We need to create a new reducer and action file for post:
+
+   `reducers/postReducer.js`
+
+   ```react
+   const initialState = {
+       posts: [],
+       post: {},
+       loading: false
+   }
+   
+   export default function(state = initialState, action) {
+       switch(action.type) {
+           default:
+           return state;
+       }
+   }
+   ```
+
+2. We want to jump in `types.js` and add these new types under `GET_PROFILE`
+
+   ```react
+   ...
+   export const POST_LOADING = 'POST_LOADING';
+   export const GET_POSTS = 'GET_POSTS';
+   export const GET_POST = 'GET_POST';
+   export const ADD_POST = 'ADD_POST';
+   export const DELETE_POST = 'DELETE_POST';
+   ```
+
+3. for this post reducer to even be seen, we need to import it into `reducers/index.js` 
+
+   ```react
+   ...
+   ...
+   import postReducer from './postReducer';
+   
+   export default combineReducers({
+     auth: authReducer,
+     errors: errorReducer,
+     profile: profileReducer,
+     post: postReducer
+   });
+   ```
+
+4. create a new action to add posts `actions/postActions.js`
+
+   ```react
+   import axios from 'axios';
+   
+   import { ADD_POST, GET_ERRORS } from './types';
+   
+   //Add Post
+   export const addPost = postData => dispatch => {
+     axios
+       .post('/api/posts', postData)
+       .then(res =>
+         dispatch({
+           type: ADD_POST,
+           payload: res.data
+         })
+       )
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.response.data
+         })
+       );
+   };
+   ```
+
+
+
+### Posts: Post Form Component
+
+1.

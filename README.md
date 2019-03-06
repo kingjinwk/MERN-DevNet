@@ -7367,4 +7367,238 @@ We now want the functionalities for the Github function.
    }
    ```
 
-9. 
+
+
+
+### Posts: getPosts Action and PostFeed Component
+
+1. we want to create an action to grab the post, so we want to do that in `actions/postActions`
+
+   ```react
+   ...
+   import { ADD_POST, GET_ERRORS, GET_POSTS, POST_LOADING } from './types';
+   ...
+   ...
+   ...
+   //Get Post
+   export const getPost = () => dispatch => {
+     dispatch(setPostLoading());
+     axios
+       .get('/api/posts')
+       .then(res =>
+         //once post is fetched
+         dispatch({
+           type: GET_POSTS,
+           payload: res.data
+         })
+       )
+       //for errors
+       .catch(err =>
+         dispatch({
+           type: GET_POSTS,
+           payload: null
+         })
+       );
+   };
+   
+   // Set loading state for getPost
+   export const setPostLoading = () => {
+     return {
+       type: POST_LOADING
+     };
+   };
+   ```
+
+2. we want to now create the `GET_POST` type in the `postReducer`
+
+   ```react
+   import { ADD_POST, GET_POSTS, POST_LOADING } from '../actions/types';
+   ...
+   ...
+   ...
+       case POST_LOADING:
+         return {
+           ...state,
+           loading: true
+         };
+       //once we get the post
+       case GET_POSTS:
+         return {
+           ...state,
+           posts: action.payload,
+           loading: false
+         };
+   ```
+
+3. now it is time to create the actual component, so let's go to `posts/Posts` and hook it up with redux
+
+   ```react
+   Posts.propTypes = {
+     getPosts: PropTypes.func.isRequired,
+     post: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     post: state.post
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { getPosts }
+   )(Posts);
+   ```
+
+4. and now we want to create the lifecycle method for `componentDidMount` as well as creating an if statement inside the render to check for posts
+
+   ```react
+   class Posts extends Component {
+     componentDidMount() {
+       this.props.getPosts();
+     }
+   
+     render() {
+       const { posts, loading } = this.props.post;
+       let postContent;
+   
+       //make sure post is not null
+       if (posts === null || loading) {
+         postContent = <Spinner />;
+       } else {
+         //post is not null or not loading
+         postContent = <PostFeed posts={posts} />;
+       }
+   
+       return (
+         <div className="feed">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-12">
+                 <PostForm />
+                 {/* This is where we want the content to show */}
+                 {postContent}
+   ```
+
+5. and now we need to create `posts/PostFeed` because we require it, and also `posts/PostItem.js` for the next section
+
+   - this funciton mainly serves to map through the posts and display them
+
+   ```react
+   import React, { Component } from 'react';
+   import PropTypes from 'prop-types';
+   import PostItem from './PostItem';
+   
+    class PostFeed extends Component {
+     render() {
+       //destructure post out of props
+       const { posts } = this.props;
+   
+       return posts.map(post => <PostItem key={post._id} post={post} />)
+     }
+   }
+   
+   PostFeed.propTypes = {
+       posts: PropTypes.array.isRequired
+   }
+   
+   export default PostFeed;
+   ```
+
+6. we still get an error for now, but we will fix it in the next section and create the component in `PostItem.js`
+
+
+
+### Posts: PostItem Component
+
+This is where we will fix the render method issues with `PostFeed` in the last section
+
+1. make an `rcc` component inside PostItems, and fill it with theme code for the Post Item in `feed.html` from `devnet_theme`. 
+
+2. Change all the `class` tags into `className`, and then we want this to look more dynamic:
+
+   - at this point, we have the theme to plug in repeating placeholders for each post we made 
+   - the rest of the steps are mentioned in the comments
+
+   ```react
+   import React, { Component } from 'react';
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   // import classnames from 'classnames';
+   import { Link } from 'react-router-dom';
+   
+   class PostItem extends Component {
+     onDeleteClick(id) {
+       console.log(id);
+     }
+   
+     render() {
+       //pull post and auth out of props
+       const { post, auth } = this.props;
+   
+       return (
+         <div className="card card-body mb-3">
+           <div className="row">
+             <div className="col-md-2">
+               <a href="profile.html">
+                 <img
+                   className="rounded-circle d-none d-md-block"
+                   // Changed this post {post.avatar} for dyanmic user profile picture grabbing
+                   src={post.avatar}
+                   alt=""
+                 />
+               </a>
+               <br />
+               {/* So the name shows dynamically */}
+               <p className="text-center">{post.name}</p>
+             </div>
+             <div className="col-md-10">
+               <p className="lead">
+                 {/* For dynamic text grabbing */}
+                 {post.text}
+               </p>
+               <button type="button" className="btn btn-light mr-1">
+                 <i className="text-info fas fa-thumbs-up" />
+                 {/* For number of likes */}
+                 <span className="badge badge-light">{post.likes.length}</span>
+               </button>
+               <button type="button" className="btn btn-light mr-1">
+                 <i className="text-secondary fas fa-thumbs-down" />
+               </button>
+               {/* This allows us to get post by id, but we need to create a route */}
+               <Link to={`/post/${post._id}`} className="btn btn-info mr-1">
+                 Comments
+               </Link>
+               {/* This is so the authorized user can delete the post */}
+               {post.user === auth.user.id ? (
+                 <button
+                   //   We need to create the onDeleteClick function
+                   onClick={this.onDeleteClick.bind(this, post._id)}
+                   type="button"
+                   className="btn btn-danger mr-1"
+                 >
+                   <i className="fas fa-times" />
+                 </button>
+               ) : null}
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   PostItem.propTypes = {
+     post: PropTypes.object.isRequired,
+     auth: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     auth: state.auth
+   });
+   
+   export default connect(mapStateToProps)(PostItem);
+   ```
+
+
+
+### Posts: Delete, Like, Unlike Posts
+
+1. 

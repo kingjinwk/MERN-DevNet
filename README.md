@@ -8477,3 +8477,44 @@ we now want to be able to see the comment out in the post
 
 ## Prepare & Deploy
 
+1. we need to look at our config keys in `config/keys` because we do not want to push the actual database information, so we are going to create two new files in `config` called `keys_dev.js` and `keys_prod.js`
+
+   `keys_devs.js`
+
+   ```react
+   //we do not want to push this file
+   module.exports = {
+       mongoURI:
+         'mongodb://jinwoo:jinwoo1@ds117545.mlab.com:17545/react-social-network',
+       secretOrKey: 'secret'
+     };
+   ```
+
+   `keys_prod.js` this file has info that people won't be able to use
+
+   ```react
+   module.exports = {
+       mongoURI:
+         process.env.MONGO_URI,
+       secretOrKey: process.env.SECRET_OR_KEY
+     };
+   ```
+
+2. and we modify `keys` to choose which keys we want to push
+
+   ```javascript
+   if (process.env.NODE_ENV === 'production') {
+     module.export = require('./keys_prod');
+   } else {
+     module.exports = require('./keys_dev');
+   }
+   ```
+
+3. we don't want to include this file so go to root `.gitignore` and include keys_dev
+
+   ```react
+   /node_modules
+   package-lock.json
+   /config/keys_dev.js
+   ```
+

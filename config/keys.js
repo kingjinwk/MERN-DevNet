@@ -1,6 +1,5 @@
-//make this obj available outside this file
-module.exports = {
-  mongoURI:
-    'mongodb://jinwoo:jinwoo1@ds117545.mlab.com:17545/react-social-network',
-  secretOrKey: 'secret'
-};
+if (process.env.NODE_ENV === 'production') {
+  module.export = require('./keys_prod');
+} else {
+  module.exports = require('./keys_dev');
+}

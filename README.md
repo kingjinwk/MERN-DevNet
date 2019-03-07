@@ -7601,4 +7601,879 @@ This is where we will fix the render method issues with `PostFeed` in the last s
 
 ### Posts: Delete, Like, Unlike Posts
 
-1. 
+1. We first want to create the `deletePost` action in `actions/postActions`
+
+   ```react
+   //Delete Post
+   export const deletePost = id => dispatch => {
+     axios
+       .delete(`/api/posts/${id}`)
+       .then(res =>
+         dispatch({
+           type: DELETE_POST,
+           payload: id
+         })
+       )
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.res.data
+         })
+       );
+   };
+   ```
+
+2. now we want to import `DELETE_POST` to types
+
+   ```react
+   import { ADD_POST, GET_ERRORS, GET_POSTS, POST_LOADING, DELETE_POST } from './types';
+   ```
+
+3. then we want to hop into `postReducer` and add the `DELETE_POST` type
+
+   ```react
+   import { ADD_POST, GET_POSTS, POST_LOADING, DELETE_POST } from '../actions/types';
+   
+   ...
+   ...
+   
+       //case for deleting post
+       case DELETE_POST:
+         return {
+           ...state,
+           posts: state.posts.filter(post => post._id !== action.payload)
+         };
+   ```
+
+4. we want to bring this feature into `PostItem` now
+
+   ```react
+   import { deletePost } from '../../actions/postActions'
+   ...
+   ...
+   
+   class PostItem extends Component {
+     onDeleteClick(id) {
+       this.props.deletePost(id);
+     }
+     ...
+   ...
+   ...
+   
+   PostItem.propTypes = {
+     post: PropTypes.object.isRequired,
+     auth: PropTypes.object.isRequired,
+     deletePost: PropTypes.func.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     auth: state.auth
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { deletePost }
+   )(PostItem);
+   ```
+
+5. we now want to Like and Unlike posts, so we need to go to `postActions ` and create a new function called `addLike` and also `removeLike`
+
+   ```react
+   //Add Like
+   export const addLike = id => dispatch => {
+     axios
+       .post(`/api/posts/like/${id}`)
+       .then(res => dispatch(getPosts()))
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.response.data
+         })
+       );
+   };
+   
+   //Remove Like
+   export const removeLike = id => dispatch => {
+     axios
+       .post(`/api/posts/unlike/${id}`)
+       .then(res => dispatch(getPosts()))
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.response.data
+         })
+       );
+   };
+   ```
+
+6. go back to `PostItem` and bring in the two actions
+
+   ```react
+   import { deletePost, addLike, removeLike } from '../../actions/postActions';
+   ...
+   ...
+   ...
+   class PostItem extends Component {
+     onDeleteClick(id) {
+       this.props.deletePost(id);
+     }
+   onLikeClick(id) {
+       this.props.addLike(id);
+     }
+     onUnlikeClick(id) {
+       this.props.removeLike(id);
+     }
+   ...
+   ...
+   ...
+   <button
+                 onClick={this.onLikeClick.bind(this, post._id)}
+                 type="button"
+                 className="btn btn-light mr-1"
+               >
+                 <i className="text-info fas fa-thumbs-up" />
+                 {/* For number of likes */}
+                 <span className="badge badge-light">{post.likes.length}</span>
+               </button>
+               <button
+                 onClick={this.onUnlikeClick.bind(this, post._id)}
+                 type="button"
+                 className="btn btn-light mr-1"
+               >
+   ...
+   ...
+   ...
+   PostItem.propTypes = {
+     addLike: PropTypes.func.isRequired,
+     removeLike: PropTypes.func.isRequired,
+     post: PropTypes.object.isRequired,
+     auth: PropTypes.object.isRequired,
+     deletePost: PropTypes.func.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     auth: state.auth
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { deletePost, addLike, removeLike }
+   )(PostItem);
+   ```
+
+7. when we like a post, we want the post we liked to show in green, so that's what we want to do in `PostItem.js`
+
+   ```react
+     findUserLike(likes) {
+       const {auth} = this.props;
+       if(likes.filter(like => like.user === auth.user.id).length > 0) {
+         return true;
+       } else {
+         return false;
+       }
+     }
+   
+   ...
+   ...
+   ...
+               {/* So the name shows dynamically */}
+               <p className="text-center">{post.name}</p>
+             </div>
+             <div className="col-md-10">
+               <p className="lead">
+                 {/* For dynamic text grabbing */}
+                 {post.text}
+               </p>
+               <button
+                 onClick={this.onLikeClick.bind(this, post._id)}
+                 type="button"
+                 className="btn btn-light mr-1"
+               >
+                 {/* NOTE: this Text Info class is what makes the button green, so we want THIS part to be dynamic */}
+                 {/* with classnames, our text-info first checks if user is valid, and then changes the colors accordingly */}
+                 <i className={classnames('fas fa-thumbs-up', {
+                   'text-info': this.findUserLike(post.likes)
+                 })} />
+                 {/* For number of likes */}
+                 <span className="badge badge-light">{post.likes.length}</span>
+               </button>
+               <button
+                 onClick={this.onUnlikeClick.bind(this, post._id)}
+                 type="button"
+                 className="btn btn-light mr-1"
+               >
+                 <i className="text-secondary fas fa-thumbs-down" />
+               </button>
+   ```
+
+8. now when we like a post, the thumbs up icon is blue
+
+### 
+
+### Posts: Comments and Single Post Display
+
+We need to create a component and route for **SINGLE POSTS**
+
+1. create `components/post/Post.js` for the post component
+
+   ```react
+   import React, { Component } from 'react'
+   
+   class Post extends Component {
+     render() {
+       return (
+         <div>
+           <h1>POST PLACEHOLDER</h1>
+         </div>
+       )
+     }
+   }
+   
+   export default Post;
+   ```
+
+2. in `App.js` bring in the Post component as well as create a Private Route
+
+   ```react
+   import Post from './components/post/Post';
+   ...
+   ...
+   ...
+   
+   <Switch>
+                   <PrivateRoute
+                     exact
+                     // We need :id because we want to grab each post's unique id for the page
+                     path="/post/:id"
+                     component={Post}
+                   />
+                 </Switch>
+                 <Route exact path="/not-found" component={NotFound} />
+               </div>
+               <Footer />
+             </div>
+           </Router>
+         </Provider>
+       );
+     }
+   }
+   
+   export default App;
+   ```
+
+3. we need an action to fetch the post based on the id now, so create a `getPost` action in `action/postActions`
+
+   ```react
+   import {
+     ADD_POST,
+     GET_ERRORS,
+     GET_POSTS,
+     GET_POST,
+     POST_LOADING,
+     DELETE_POST
+   } from './types';
+   
+   ...
+   ...
+   
+   //Get post
+   export const getPost = (id) => dispatch => {
+     dispatch(setPostLoading());
+     axios
+       .get(`/api/post/${id}`)
+       .then(res =>
+         //once post is fetched
+         dispatch({
+           type: GET_POST,
+           payload: res.data
+         })
+       )
+       //for errors
+       .catch(err =>
+         dispatch({
+           type: GET_POST,
+           payload: null
+         })
+       );
+   };
+   ```
+
+4. and now we want to bring this type into the `postReducer`
+
+   ```react
+   import {
+     GET_POST,
+     ADD_POST,
+     GET_POSTS,
+     POST_LOADING,
+     DELETE_POST
+   } from '../actions/types';
+   
+   ...
+   ...
+   
+   export default function(state = initialState, action) {
+     switch (action.type) {
+       case GET_POST:
+        return {
+          ...state,
+          post: action.payload,
+          loading: false
+        }
+   ```
+
+5. we are now finished with all the Redux stuff, so let's go back to `Post.js` and bring in redux there
+
+   - we also have to deconstruct showActions from the prop to make sure the Like button is not featured on the page
+
+   ```react
+   import React, { Component } from 'react';
+   import { connect } from 'react-redux';
+   import { Link } from 'react-router-dom';
+   import PropTypes from 'prop-types';
+   import PostItem from '../posts/PostItem';
+   import Spinner from '../common/Spinner';
+   import { getPost } from '../../actions/postActions';
+   
+   class Post extends Component {
+     componentDidMount() {
+       this.props.getPost(this.props.match.params.id);
+     }
+   
+     render() {
+       //using PostItem to get post from props
+       const { post, loading } = this.props.post;
+       let postContent;
+   
+       if (post === null || loading || Object.keys(post).length === 0) {
+         postContent = <Spinner />;
+       } else {
+         postContent = (
+           <div>
+             {/* this is because we do not want Like button to show in this page */}
+             <PostItem post={post} showActions={false} />
+           </div>
+         );
+       }
+   
+       return (
+         <div className="post">
+           <div className="container">
+             <div className="row">
+               <div className="col-md-12" />
+               <Link to="/feed" className="btn btn-light mb-3">
+                 Back to Feed
+               </Link>
+             </div>
+             {postContent}
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   Post.propTypes = {
+     getPost: PropTypes.func.isRequired,
+     post: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     post: state.post
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { getPost }
+   )(Post);
+   ```
+
+6. go back into `PostItem.js` to deconstruct `showActions` from props, and set it to `true` by making a new default Prop
+
+   ```react
+   //pull post and auth out of props
+       //pulling showActions to disable like feature on comments page
+   
+       const { post, auth, showActions } = this.props;
+   
+       return (
+   ...
+           ...
+           ...
+           ...
+               {/* only show likes if ShowActions is true */}
+               {showActions ? (
+                 <span>
+                   <button
+                     onClick={this.onUnlikeClick.bind(this, post._id)}
+                     type="button"
+                     className="btn btn-light mr-1"
+                   >
+                     <i className="text-secondary fas fa-thumbs-down" />
+                   </button>
+                   {/* This allows us to get post by id, but we need to create a route */}
+                   <Link to={`/post/${post._id}`} className="btn btn-info mr-1">
+                     Comments
+                   </Link>
+                   {/* This is so the authorized user can delete the post */}
+                   {post.user === auth.user.id ? (
+                     <button
+                       //   We need to create the onDeleteClick function
+                       onClick={this.onDeleteClick.bind(this, post._id)}
+                       type="button"
+                       className="btn btn-danger mr-1"
+                     >
+                       <i className="fas fa-times" />
+                     </button>
+                   ) : null}
+                 </span>
+               ) : null}
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   PostItem.defaultProps = {
+     showActions: true
+   }
+   
+   ...
+   ...
+   ```
+
+7. Now the post shows correctly, let's move onto the Comment Form
+
+
+
+### Posts: Comment Form Component and Action
+
+We want to add and display comments for each post page
+
+1. create a bunch of new components in the states folder
+
+   `post/CommentForm.js` - this one is basically a copy of `PostForm` with a couple modifications
+
+   ```react
+   import React, { Component } from 'react';
+   import PropTypes from 'prop-types';
+   import { connect } from 'react-redux';
+   import TextAreaFieldGroup from '../common/TextAreaFieldGroup';
+   //we are going to need to create this action
+   import { addComment } from '../../actions/postActions';
+   
+   class CommentForm extends Component {
+     constructor(props) {
+       super(props);
+       this.state = {
+         text: '',
+         errors: {}
+       };
+       this.onChange = this.onChange.bind(this);
+       this.onSubmit = this.onSubmit.bind(this);
+     }
+   
+     componentWillReceiveProps(newProps) {
+       if (newProps.errors) {
+         this.setState({ errors: newProps.errors });
+       }
+     }
+   
+     onSubmit(e) {
+       e.preventDefault();
+       const { user } = this.props.auth;
+   
+       //NEW: need this for the post id, so we know where to add the comment
+       const { postId } = this.props;
+   
+       const newComment = {
+         text: this.state.text,
+         name: user.name,
+         avatar: user.avatar
+       };
+   
+       this.props.addComment(postId, newComment);
+   
+       //clear the text field
+       this.setState({ text: '' });
+     }
+   
+     onChange(e) {
+       this.setState({ [e.target.name]: e.target.value });
+     }
+   
+     render() {
+       const { errors } = this.state;
+   
+       return (
+         <div className="post-form mb-3">
+           <div className="card card-info">
+             <div className="card-header bg-info text-white">
+               Leave a comment...
+             </div>
+             <div className="card-body">
+               <form onSubmit={this.onSubmit}>
+                 <div className="form-group">
+                   <TextAreaFieldGroup
+                     placeholder="Reply to post"
+                     name="text"
+                     value={this.state.text}
+                     onChange={this.onChange}
+                     error={errors.text}
+                   />
+                 </div>
+                 <button type="submit" className="btn btn-dark">
+                   Submit
+                 </button>
+               </form>
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   CommentForm.propTypes = {
+     addComment: PropTypes.func.isRequired,
+     auth: PropTypes.object.isRequired,
+     errors: PropTypes.object.isRequired,
+     postId: PropTypes.string.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     errors: state.errors,
+     auth: state.auth
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { addComment }
+   )(CommentForm);
+   ```
+
+2. now we want to create `addComment` in `postActions`
+
+   ```react
+   //Add Comment
+   export const addComment = (postId, commentData) => dispatch => {
+     axios
+       .post(`/api/posts/comment/${postId}`, commentData)
+       .then(res =>
+         dispatch({
+           type: GET_POST,
+           payload: res.data
+         })
+       )
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.res.data
+         })
+       );
+   };
+   ```
+
+3. now we want to add the actual comment form in `Post.js`
+
+   ```react
+   import CommentForm from './CommentForm';
+   
+   ...
+   ...
+   ...
+   
+     render() {
+       //using PostItem to get post from props
+       const { post, loading } = this.props.post;
+       let postContent;
+   
+       if (post === null || loading || Object.keys(post).length === 0) {
+         postContent = <Spinner />;
+       } else {
+         postContent = (
+           <div>
+             {/* this is because we do not want Like button to show in this page */}
+             <PostItem post={post} showActions={false} />
+             <CommentForm postId={post._id}/>
+           </div>
+         );
+       }
+   ```
+
+4. at this point, we can see the `Reply to Post` box
+
+
+
+### Comment: Display and Delete (Feed Component and Item)
+
+we now want to be able to see the comment out in the post
+
+1. create two more components `post/CommentFeed.js` and `post/CommentItem.js`
+
+2. feed takes care of mapping through the items and item is in charge of displaying each one
+
+3. in `CommentFeed` create a class based component
+
+   ```react
+   import React, { Component } from 'react';
+   import PropTypes from 'prop-types';
+   import CommentItem from './CommentItem';
+   
+   class CommentFeed extends Component {
+     render() {
+       const { comments, postId } = this.props;
+   
+       return comments.map(comment => (
+         <CommentItem key={comment._id} comment={comment} postId={postId} />
+       ));
+     }
+   }
+   
+   CommentFeed.propTypes = {
+     comments: PropTypes.array.isRequired,
+     postId: PropTypes.string.isRequired
+   };
+   
+   export default CommentFeed;
+   ```
+
+4. now in `CommentItem` we want to create a class based component and get `post.html`theme into the render, from the `devnet_theme` folder
+
+5. and if we are an authorized user, we want to be able to delete an item as well
+
+   ```react
+   import React, { Component } from 'react';
+   import { connect } from 'react-redux';
+   import PropTypes from 'prop-types';
+   //action for deleteComment, which we need to create
+   import { deleteComment } from '../../actions/postActions';
+   
+   class CommentItem extends Component {
+     render() {
+       const { comment, postId, auth } = this.props;
+   
+       return (
+         <div className="card card-body mb-3">
+           <div className="row">
+             <div className="col-md-2">
+               <a href="profile.html">
+                 <img
+                   className="rounded-circle d-none d-md-block"
+                   src={comment.avatar}
+                   alt=""
+                 />
+               </a>
+               <br />
+               <p className="text-center">{comment.name}</p>
+             </div>
+             <div className="col-md-10">
+               <p className="lead">{comment.text}</p>
+               {/* This is so the authorized user can delete the post */}
+               {comment.user === auth.user.id ? (
+                 <button
+                   //   We need to create the onDeleteClick function
+                   onClick={this.onDeleteClick.bind(this, postId, comment._id)}
+                   type="button"
+                   className="btn btn-danger mr-1"
+                 >
+                   <i className="fas fa-times" />
+                 </button>
+               ) : null}
+             </div>
+           </div>
+         </div>
+       );
+     }
+   }
+   
+   CommentItem.propTypes = {
+     deleteComment: PropTypes.func.isRequired,
+     comment: PropTypes.object.isRequired,
+     postId: PropTypes.string.isRequired,
+     auth: PropTypes.object.isRequired
+   };
+   
+   const mapStateToProps = state => ({
+     auth: state.auth
+   });
+   
+   export default connect(
+     mapStateToProps,
+     { deleteComment }
+   )(CommentItem);
+   
+   
+   ```
+
+6. go back to `post/Post.js` and import the `CommentFeed`
+
+   ```react
+   import CommentFeed from './CommentFeed';
+   
+   ...
+   
+   class Post extends Component {
+     componentDidMount() {
+       this.props.getPost(this.props.match.params.id);
+     }
+   
+     render() {
+       //using PostItem to get post from props
+       const { post, loading } = this.props.post;
+       let postContent;
+   
+       if (post === null || loading || Object.keys(post).length === 0) {
+         postContent = <Spinner />;
+       } else {
+         postContent = (
+           <div>
+             {/* this is because we do not want Like button to show in this page */}
+             <PostItem post={post} showActions={false} />
+             <CommentForm postId={post._id} />
+             <CommentFeed postId={post._id} comments={post.comments} />
+   
+           </div>
+         );
+       }
+   
+   ```
+
+7. go back to `postActions` and let's create the `deleteComment` action
+
+   ```react
+   //Delete Comment
+   export const deleteComment = (postId, commentId) => dispatch => {
+     axios
+       .delete(`/api/posts/comment/${postId}/${commentId}`)
+       .then(res =>
+         dispatch({
+           type: GET_POST,
+           payload: res.data
+         })
+       )
+       .catch(err =>
+         dispatch({
+           type: GET_ERRORS,
+           payload: err.res.data
+         })
+       );
+   };
+   ```
+
+8. go back into `CommentItem` and let's create onDeleteClick
+
+   ```react
+     onDeleteClick(postId, commentId) {
+       this.props.deleteComment(postId, commentId);
+     }
+   ```
+
+9. and at this point, the button to delete a comment appears AND works
+
+10. we want to make sure that all errors clear after delete action has been done, so back in `postActions` and make a `clearErrors` action, as well as adding the `CLEAR_ERRROS` type in `actions/types.js`
+
+    ```react
+    import {
+      CLEAR_ERRORS,
+      ADD_POST,
+      GET_ERRORS,
+      GET_POSTS,
+      GET_POST,
+      POST_LOADING,
+      DELETE_POST
+    } from './types';
+    ...
+    ...
+    // Clear errors
+    export const clearErrors = () => {
+      return {
+        type: CLEAR_ERRORS
+      };
+    };
+    ```
+
+    and in `types`
+
+    ```react
+    export const CLEAR_ERRORS = 'CLEAR_ERRORS';
+    ```
+
+11. and now we want `addComment` and `addPost` in `postActions` to dispatch CLEAR_ERRORS before anything else
+
+    ```react
+    ..
+    ...
+    ...
+    //Add Post
+    export const addPost = postData => dispatch => {
+      dispatch(clearErrors());
+      axios
+        .post('/api/posts', postData)
+        .then(res =>
+          dispatch({
+            type: ADD_POST,
+            payload: res.data
+          })
+        )
+        .catch(err =>
+          dispatch({
+            type: GET_ERRORS,
+            payload: err.res.data
+          })
+        );
+    };
+    
+    ...
+    
+    //Add Comment
+    export const addComment = (postId, commentData) => dispatch => {
+      dispatch(clearErrors());
+      axios
+        .post(`/api/posts/comment/${postId}`, commentData)
+        .then(res =>
+          dispatch({
+            type: GET_POST,
+            payload: res.data
+          })
+        )
+        .catch(err =>
+          dispatch({
+            type: GET_ERRORS,
+            payload: err.response.data
+          })
+        );
+    };
+    ```
+
+12. and now we want to bring this into the `errorReducer` so we can use this anywhere wih errors
+
+    ```react
+    import { GET_ERRORS, CLEAR_ERRORS } from '../actions/types';
+    
+    const initialState = {
+      isAuthenticated: false,
+      user: {}
+    };
+    
+    export default function(state = initialState, action) {
+      switch (action.type) {
+        case GET_ERRORS:
+          //the payload includes the errors object from the server in authActions
+          return action.payload;
+          //just return an empty object to clear the previous object
+          case CLEAR_ERRORS:
+          return {}
+        default:
+          return state;
+      }
+    }
+    ```
+
+13. So now, the errors disappear when I post a comment or a post
+
+14. We are finished with the actual coding part now!
+
+
+
+## Prepare & Deploy
+
